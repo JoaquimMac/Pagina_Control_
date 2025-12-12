@@ -19,7 +19,6 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Tuple, Any
 from datetime import datetime, date
-from functools import wraps
 
 # ============================================= CONFIGURAÇÃO DA PÁGINA =============================================
 st.set_page_config(
@@ -48,49 +47,6 @@ def setup_logging():
 
 logger = setup_logging()
 
-# ============================================= SISTEMA DE CONFIGURAÇÃO =============================================
-class Config:
-    """Classe para gerenciar configurações do sistema"""
-    def __init__(self):
-        self.arquivos_vendas = [
-            'Vds_2023_Comb_.xlsx',
-            'Vds_2024_Comb_.xlsx', 
-            'Vds_2025_Comb_.xlsx'
-        ]
-        self.arquivos_plano = [
-            'PlanComb_2023.xlsx',
-            'PlanComb_2024.xlsx',
-            'PlanComb_2025.xlsx'
-        ]
-        self.densidades = {
-            'Gasolina': 0.73,
-            'Jet A1': 0.79,
-            'Gasóleo': 0.84,
-            'Diesel': 0.84
-        }
-        self.clientes_congeneres = [
-            "AFR PETR", "B ENERGY", "BP", "CAC", "CAMEL", "DALBIT", "ENER", "EXOR",
-            "GLENCORE", "GTS", "IPM", "I2A", "LAKE OIL", "LIBERTY", "MCCI", "MITRA",
-            "MOUMERU", "MOZTOP", "NGUVU L", "PETRODA", "PETROGAL", "PESS", "PUMA",
-            "RUR", "TOP ENERGY", "TOTAL", "UNION", "VIVO"
-        ]
-        self.ordem_portos = ['Maputo', 'Beira', 'Nacala', 'Pemba']
-        self.linhas_negocio = ["Vulcan", "Consumidores", "Revendedores", "Bunkers", "Aviacao", "Reexportacao", "Armazenagem"]
-
-config = Config()
-
-# ============================================= DECORATORS =============================================
-def timer_decorator(func):
-    """Decorator para medir tempo de execução"""
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-        result = func(*args, **kwargs)
-        end_time = time.time()
-        logger.info(f"Função {func.__name__} executada em {end_time - start_time:.2f} segundos")
-        return result
-    return wrapper
-
 # ============================================= INICIALIZAÇÃO DO SESSION_STATE =============================================
 def inicializar_session_state():
     """Inicializa todas as variáveis necessárias no session_state"""
@@ -109,346 +65,400 @@ def inicializar_session_state():
 # Inicializar session_state antes de qualquer widget
 inicializar_session_state()
 
-# CSS personalizado COMPATÍVEL COM STREAMLIT CLOUD
+# CSS personalizado com cores mais vibrantes nos cards E SCROLLER ANIMADO
 st.markdown("""
 <style>
-    /* RESET E CONFIGURAÇÕES GERAIS */
     .main {
-        background-color: #FFFFFF !important;
-        color: #333333 !important;
+        background-color: #FFFFFF;
+        color: #333333;
     }
     
     .stApp {
-        background: #F8F9FA !important;
+        background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);
     }
     
-    /* HEADER PRINCIPAL */
     .main-header {
-        color: #FF6B35 !important;
-        border-bottom: 3px solid #FF6B35 !important;
-        padding-bottom: 0.5rem !important;
-        font-weight: 700 !important;
-        font-size: 2.5rem !important;
-        margin-bottom: 1rem !important;
+        color: #FF6B35;
+        border-bottom: 3px solid #FF6B35;
+        padding-bottom: 0.5rem;
+        font-weight: 700;
+        font-size: 2.5rem;
     }
     
-    /* CARDS DE MÉTRICAS - CORES SÓLIDAS PARA MAIOR COMPATIBILIDADE */
     .metric-card-industria {
-        background: #667eea !important;
-        border: 2px solid #5a6fd8 !important;
-        border-radius: 15px !important;
-        padding: 1.5rem !important;
-        margin: 0.5rem 0 !important;
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.25) !important;
-        height: 140px !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: center !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: 2px solid #5a6fd8;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 0.5rem 0;
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.25);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        height: 140px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
     
     .metric-card-petromoc {
-        background: #FF6B35 !important;
-        border: 2px solid #FF5A1F !important;
-        border-radius: 15px !important;
-        padding: 1.5rem !important;
-        margin: 0.5rem 0 !important;
-        box-shadow: 0 6px 20px rgba(255, 107, 53, 0.25) !important;
-        height: 140px !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: center !important;
+        background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+        border: 2px solid #FF5A1F;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 0.5rem 0;
+        box-shadow: 0 6px 20px rgba(255, 107, 53, 0.25);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        height: 140px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
     
     .metric-card-congenere {
-        background: #4ECDC4 !important;
-        border: 2px solid #3BB4AC !important;
-        border-radius: 15px !important;
-        padding: 1.5rem !important;
-        margin: 0.5rem 0 !important;
-        box-shadow: 0 6px 20px rgba(78, 205, 196, 0.25) !important;
-        height: 140px !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: center !important;
+        background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
+        border: 2px solid #3BB4AC;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 0.5rem 0;
+        box-shadow: 0 6px 20px rgba(78, 205, 196, 0.25);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        height: 140px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
     
     .metric-card-RELEASE {
-        background: #FFD166 !important;
-        border: 2px solid #FFC857 !important;
-        border-radius: 15px !important;
-        padding: 1.5rem !important;
-        margin: 0.5rem 0 !important;
-        box-shadow: 0 6px 20px rgba(255, 209, 102, 0.25) !important;
-        height: 140px !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: center !important;
+        background: linear-gradient(135deg, #FFD166 0%, #FFB347 100%);
+        border: 2px solid #FFC857;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 0.5rem 0;
+        box-shadow: 0 6px 20px rgba(255, 209, 102, 0.25);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        height: 140px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
     
     .metric-card-fh {
-        background: #06D6A0 !important;
-        border: 2px solid #05C793 !important;
-        border-radius: 15px !important;
-        padding: 1.5rem !important;
-        margin: 0.5rem 0 !important;
-        box-shadow: 0 6px 20px rgba(6, 214, 160, 0.25) !important;
-        height: 140px !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: center !important;
+        background: linear-gradient(135deg, #06D6A0 0%, #04A777 100%);
+        border: 2px solid #05C793;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 0.5rem 0;
+        box-shadow: 0 6px 20px rgba(6, 214, 160, 0.25);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        height: 140px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
     
     .metric-card-plano {
-        background: #9D4EDD !important;
-        border: 2px solid #8A2BE2 !important;
-        border-radius: 15px !important;
-        padding: 1.5rem !important;
-        margin: 0.5rem 0 !important;
-        box-shadow: 0 6px 20px rgba(157, 78, 221, 0.25) !important;
-        height: 140px !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: center !important;
+        background: linear-gradient(135deg, #9D4EDD 0%, #7B2CBF 100%);
+        border: 2px solid #8A2BE2;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 0.5rem 0;
+        box-shadow: 0 6px 20px rgba(157, 78, 221, 0.25);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        height: 140px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
     
-    /* TEXTOS DOS CARDS */
+    .metric-card-industria:hover, 
+    .metric-card-petromoc:hover, 
+    .metric-card-congenere:hover,
+    .metric-card-RELEASE:hover,
+    .metric-card-fh:hover,
+    .metric-card-plano:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+    }
+    
     .metric-title {
-        font-size: 0.9rem !important;
-        font-weight: 700 !important;
-        color: rgba(255, 255, 255, 0.95) !important;
-        margin-bottom: 0.5rem !important;
-        text-transform: uppercase !important;
-        letter-spacing: 1px !important;
-        text-align: center !important;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.95);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-align: center;
     }
     
     .metric-value {
-        font-size: 2rem !important;
-        font-weight: 800 !important;
-        color: white !important;
-        text-align: center !important;
-        margin-bottom: 0.25rem !important;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        font-size: 2rem;
+        font-weight: 800;
+        color: white;
+        text-align: center;
+        margin-bottom: 0.25rem;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
     
     .metric-subvalue {
-        font-size: 0.85rem !important;
-        font-weight: 600 !important;
-        color: rgba(255, 255, 255, 0.9) !important;
-        text-align: center !important;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.9);
+        text-align: center;
     }
     
     .metric-subvalue-small {
-        font-size: 0.75rem !important;
-        font-weight: 500 !important;
-        color: rgba(255, 255, 255, 0.85) !important;
-        text-align: center !important;
-        margin-top: 0.25rem !important;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.85);
+        text-align: center;
+        margin-top: 0.25rem;
     }
     
-    /* BOTÕES */
     .stButton button {
-        background: #FF6B35 !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 8px !important;
-        padding: 0.5rem 1rem !important;
-        font-weight: 600 !important;
-        transition: all 0.3s ease !important;
+        background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
     }
     
     .stButton button:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3) !important;
-        background: #FF8C42 !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+        background: linear-gradient(135deg, #FF8C42 0%, #FF6B35 100%);
     }
     
-    /* SEÇÕES E TÍTULOS */
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+    
+    .badge-success {
+        background: linear-gradient(135deg, #28A745 0%, #20C997 100%);
+        color: white;
+    }
+    
+    .badge-warning {
+        background: linear-gradient(135deg, #FFC107 0%, #FFB300 100%);
+        color: white;
+    }
+    
+    .badge-purple {
+        background: linear-gradient(135deg, #9D4EDD 0%, #7B2CBF 100%);
+        color: white;
+    }
+    
     .section-title {
-        color: #2D3748 !important;
-        font-weight: 700 !important;
-        font-size: 1.5rem !important;
-        margin-bottom: 1rem !important;
-        padding-bottom: 0.5rem !important;
-        border-bottom: 2px solid #FF6B35 !important;
+        color: #2D3748;
+        font-weight: 700;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #FF6B35;
     }
     
-    /* LOGO */
     .logo-container {
-        text-align: center !important;
-        padding: 1rem 0 !important;
-        margin-bottom: 1rem !important;
-        border-bottom: 2px solid #FFE0D6 !important;
+        text-align: center;
+        padding: 1rem 0;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid #FFE0D6;
     }
     
     .logo-img {
-        max-width: 200px !important;
-        height: auto !important;
-        border-radius: 10px !important;
-        box-shadow: 0 4px 12px rgba(255, 107, 53, 0.2) !important;
+        max-width: 200px;
+        height: auto;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(255, 107, 53, 0.2);
+        transition: transform 0.3s ease;
     }
     
-    /* SCROLLERS ANIMADOS */
+    .logo-img:hover {
+        transform: scale(1.05);
+    }
+    
+    .tabela-simples {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0;
+        font-size: 0.9rem;
+    }
+    
+    .tabela-simples th {
+        background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+        color: white;
+        padding: 0.75rem;
+        text-align: left;
+        font-weight: 600;
+    }
+    
+    .tabela-simples td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #E2E8F0;
+    }
+    
+    .tabela-simples tr:nth-child(even) {
+        background-color: #F7FAFC;
+    }
+    
+    .tabela-simples tr:hover {
+        background-color: #EDF2F7;
+    }
+    
+    .valor-positivo {
+        color: #28A745;
+        font-weight: 600;
+    }
+    
+    .valor-negativo {
+        color: #DC3545;
+        font-weight: 600;
+    }
+    
+    /* Estilos para as abas */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 2px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        white-space: pre-wrap;
+        background-color: #F8F9FA;
+        border-radius: 8px 8px 0px 0px;
+        gap: 1px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        font-weight: 600;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background-color: #FF6B35;
+        color: white;
+    }
+    
+    /* SCROLLER ANIMADO PARA QUOTA DE MERCADO */
     .scroller-container {
-        background: #667eea !important;
-        border-radius: 15px !important;
-        padding: 1.5rem !important;
-        margin: 1rem 0 !important;
-        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3) !important;
-        border: 3px solid #5a6fd8 !important;
-        position: relative !important;
-        overflow: hidden !important;
-    }
-    
-    .scroller-petromoc {
-        background: #FF6B35 !important;
-        border: 3px solid #FF5A1F !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        border: 3px solid #5a6fd8;
+        position: relative;
+        overflow: hidden;
     }
     
     .scroller-title {
-        color: white !important;
-        font-size: 1.3rem !important;
-        font-weight: 700 !important;
-        text-align: center !important;
-        margin-bottom: 1rem !important;
-        text-transform: uppercase !important;
-        letter-spacing: 2px !important;
+        color: white;
+        font-size: 1.3rem;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
     
     .scroller-content {
-        display: flex !important;
-        justify-content: space-around !important;
-        align-items: center !important;
-        animation: scrollEffect 15s ease-in-out infinite !important;
-        padding: 1rem 0 !important;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        animation: scrollEffect 15s ease-in-out infinite;
+        padding: 1rem 0;
     }
     
     .scroller-item {
-        text-align: center !important;
-        padding: 0 2rem !important;
-        border-right: 2px solid rgba(255, 255, 255, 0.3) !important;
-        flex: 1 !important;
+        text-align: center;
+        padding: 0 2rem;
+        border-right: 2px solid rgba(255, 255, 255, 0.3);
+        flex: 1;
     }
     
     .scroller-item:last-child {
-        border-right: none !important;
+        border-right: none;
     }
     
     .scroller-value {
-        font-size: 2.5rem !important;
-        font-weight: 800 !important;
-        color: white !important;
-        margin-bottom: 0.5rem !important;
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: white;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
     
     .scroller-label {
-        font-size: 1rem !important;
-        font-weight: 600 !important;
-        color: rgba(255, 255, 255, 0.9) !important;
-        text-transform: uppercase !important;
-        letter-spacing: 1px !important;
+        font-size: 1rem;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.9);
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
     
     .scroller-subvalue {
-        font-size: 0.9rem !important;
-        font-weight: 500 !important;
-        color: rgba(255, 255, 255, 0.8) !important;
-        margin-top: 0.25rem !important;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.8);
+        margin-top: 0.25rem;
     }
     
-    /* ANIMAÇÕES */
     @keyframes scrollEffect {
         0%, 100% {
-            transform: translateX(0) !important;
+            transform: translateX(0);
         }
         25% {
-            transform: translateX(-5px) !important;
+            transform: translateX(-5px);
         }
         50% {
-            transform: translateX(5px) !important;
+            transform: translateX(5px);
         }
         75% {
-            transform: translateX(-5px) !important;
+            transform: translateX(-5px);
         }
     }
     
+    /* Pulsating effect for important values */
     .pulse-effect {
-        animation: pulse 2s infinite !important;
+        animation: pulse 2s infinite;
     }
     
     @keyframes pulse {
         0% {
-            transform: scale(1) !important;
+            transform: scale(1);
         }
         50% {
-            transform: scale(1.05) !important;
+            transform: scale(1.05);
         }
         100% {
-            transform: scale(1) !important;
+            transform: scale(1);
         }
     }
     
-    /* RESPONSIVIDADE */
+    /* Petromoc Scroller */
+    .scroller-petromoc {
+        background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+        border: 3px solid #FF5A1F;
+    }
+    
+    /* Responsive design */
     @media (max-width: 768px) {
         .scroller-content {
-            flex-direction: column !important;
-            gap: 1rem !important;
+            flex-direction: column;
+            gap: 1rem;
         }
         
         .scroller-item {
-            border-right: none !important;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.3) !important;
-            padding: 1rem 0 !important;
+            border-right: none;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 1rem 0;
         }
         
         .scroller-item:last-child {
-            border-bottom: none !important;
+            border-bottom: none;
         }
-        
-        .main-header {
-            font-size: 2rem !important;
-        }
-        
-        .metric-value {
-            font-size: 1.5rem !important;
-        }
-    }
-    
-    /* CORREÇÕES PARA STREAMLIT CLOUD */
-    div[data-testid="stVerticalBlock"] {
-        gap: 0.5rem !important;
-    }
-    
-    .stDataFrame {
-        border: 1px solid #E2E8F0 !important;
-        border-radius: 8px !important;
-    }
-    
-    /* MELHORIAS PARA TABELAS */
-    .dataframe {
-        border-collapse: collapse !important;
-        width: 100% !important;
-    }
-    
-    .dataframe th {
-        background: #FF6B35 !important;
-        color: white !important;
-        padding: 0.75rem !important;
-        text-align: left !important;
-        font-weight: 600 !important;
-    }
-    
-    .dataframe td {
-        padding: 0.75rem !important;
-        border-bottom: 1px solid #E2E8F0 !important;
-    }
-    
-    .dataframe tr:nth-child(even) {
-        background-color: #F7FAFC !important;
-    }
-    
-    .dataframe tr:hover {
-        background-color: #EDF2F7 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -493,38 +503,13 @@ def formatar_ptbr(valor: float, casas: int = 2) -> str:
         logger.error(f"Erro na formatação: {e}")
         return "0" + (",00" if casas > 0 else "")
 
-# ============================================= VALIDAÇÃO DE DADOS =============================================
-def validar_estrutura_dados(df: pd.DataFrame, colunas_esperadas: List[str], nome_dataset: str) -> bool:
-    """Valida se o dataset tem a estrutura esperada"""
-    if df.empty:
-        logger.warning(f"Dataset {nome_dataset} está vazio")
-        return False
-        
-    colunas_faltantes = [col for col in colunas_esperadas if col not in df.columns]
-    if colunas_faltantes:
-        logger.warning(f"Dataset {nome_dataset} faltando colunas: {colunas_faltantes}")
-        return False
-        
-    logger.info(f"Dataset {nome_dataset} validado com sucesso: {len(df)} registros")
-    return True
-
-# ============================================= VALIDAÇÃO DE DATAS =============================================
-def validar_intervalo_datas(date_range: tuple, min_date: date, max_date: date) -> tuple:
-    """Valida e corrige intervalo de datas"""
-    if len(date_range) != 2:
-        return (min_date, max_date)
-        
-    start_date, end_date = date_range
-    
-    # Garantir que start_date não é maior que end_date
-    if start_date > end_date:
-        start_date, end_date = end_date, start_date
-    
-    # Limitar às datas válidas
-    start_date = max(start_date, min_date)
-    end_date = min(end_date, max_date)
-    
-    return (start_date, end_date)
+# ============================================= DENSIDADE DOS COMBUSTÍVEIS ==========================================
+DENSIDADES = {
+    'Gasolina': 0.73,
+    'Jet A1': 0.79,
+    'Gasóleo': 0.84,
+    'Diesel': 0.84
+}
 
 # ============================================= FUNÇÃO DE CONVERSÃO TM → M³ ==========================================
 def converter_tm_para_m3_seguro(quantidade_tm: float, combustivel: str) -> float:
@@ -549,7 +534,7 @@ def converter_tm_para_m3_seguro(quantidade_tm: float, combustivel: str) -> float
             combustivel_limpo.lower(), combustivel_limpo
         )
         
-        densidade = config.densidades.get(combustivel_normalizado)
+        densidade = DENSIDADES.get(combustivel_normalizado)
         
         if not densidade:
             return 0.0
@@ -590,58 +575,40 @@ def exibir_logo_sidebar():
     else:
         st.sidebar.markdown("""
         <div class="logo-container">
-            <div style="text-align: center; padding: 1rem; background: #FF6B35; border-radius: 10px; color: white;">
+            <div style="text-align: center; padding: 1rem; background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%); border-radius: 10px; color: white;">
                 <h3 style="margin: 0;">⛽ PETROMOC</h3>
                 <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem;">Sistema de Gestão</p>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-# ============================================= CARREGAMENTO DE DADOS ROBUSTO =============================================
+# ============================================= CACHE DOS DADOS =============================================
 @st.cache_data(ttl=3600)
-@timer_decorator
-def carregar_dados_robusto(arquivos: List[str], tipo: str) -> pd.DataFrame:
-    """Carrega dados com validação robusta"""
-    dfs = []
-    for arquivo in arquivos:
-        try:
+def carregar_vendas() -> pd.DataFrame:
+    """Carrega dados de vendas com verificação robusta"""
+    try:
+        arquivos_vendas = [
+            'Vds_2023_Comb_.xlsx',
+            'Vds_2024_Comb_.xlsx',
+            'Vds_2025_Comb_.xlsx'
+        ]
+        
+        dfs = []
+        for arquivo in arquivos_vendas:
             if os.path.exists(arquivo):
                 df_temp = pd.read_excel(arquivo)
                 logger.info(f"Arquivo {arquivo} carregado: {len(df_temp)} registros")
-                
-                # Validação básica
-                if len(df_temp) == 0:
-                    logger.warning(f"Arquivo {arquivo} está vazio")
-                    continue
-                    
                 dfs.append(df_temp)
             else:
                 logger.warning(f"Arquivo {arquivo} não encontrado")
-        except Exception as e:
-            logger.error(f"Erro ao carregar {arquivo}: {str(e)}")
-    
-    if not dfs:
-        return pd.DataFrame()
-    
-    # Concatenar com tratamento de colunas
-    try:
-        df = pd.concat(dfs, ignore_index=True)
-        logger.info(f"Dataset {tipo} consolidado: {len(df)} registros")
-        return df
-    except Exception as e:
-        logger.error(f"Erro ao consolidar {tipo}: {str(e)}")
-        return pd.DataFrame()
-
-@st.cache_data(ttl=3600)
-@timer_decorator
-def carregar_vendas() -> pd.DataFrame:
-    """Carrega dados de vendas com verificação robusta"""
-    df = carregar_dados_robusto(config.arquivos_vendas, "vendas")
-    
-    if df.empty:
-        return df
+                st.warning(f"⚠️ Arquivo {arquivo} não encontrado")
         
-    try:
+        if not dfs:
+            st.error("❌ Nenhum arquivo de vendas encontrado")
+            return pd.DataFrame()
+            
+        df = pd.concat(dfs, ignore_index=True).fillna(0)
+        
         # Processamento das colunas monetárias
         colunas_monetarias = ['V_Liquido', 'V_Imposto', 'Custo_Produto', 'Margem_Vendas',
                              'V_Venda_Oceanica', 'Desconto', 'Valor_ISC']
@@ -660,28 +627,28 @@ def carregar_vendas() -> pd.DataFrame:
         return df
         
     except Exception as e:
-        logger.error(f"Erro ao processar vendas: {str(e)}")
-        st.error(f"❌ Erro crítico ao processar vendas: {str(e)}")
+        logger.error(f"Erro ao carregar vendas: {str(e)}")
+        st.error(f"❌ Erro crítico ao carregar vendas: {str(e)}")
         return pd.DataFrame()
 
 @st.cache_data(ttl=3600)
-@timer_decorator
 def carregar_plano() -> pd.DataFrame:
-    """Carrega dados do plano"""
-    df = carregar_dados_robusto(config.arquivos_plano, "plano")
-    
-    if not df.empty:
-        try:
-            df['Data_Facturacao'] = pd.to_datetime(df['Data_Facturacao'], format='%d/%m/%Y', errors='coerce')
-        except Exception as e:
-            logger.error(f"Erro ao processar datas do plano: {str(e)}")
-    
-    return df
+    try:
+        p1 = pd.read_excel('PlanComb_2023.xlsx')
+        p2 = pd.read_excel('PlanComb_2024.xlsx')
+        p3 = pd.read_excel('PlanComb_2025.xlsx')
+
+        df = pd.concat([p1, p2, p3], ignore_index=True).fillna(0)
+        df['Data_Facturacao'] = pd.to_datetime(df['Data_Facturacao'], format='%d/%m/%Y', errors='coerce')
+        
+        return df
+    except Exception as e:
+        logger.error(f"Erro ao carregar plano: {str(e)}")
+        st.error(f"Erro ao carregar plano: {str(e)}")
+        return pd.DataFrame()
 
 @st.cache_data(ttl=3600)
-@timer_decorator
 def carregar_lookups():
-    """Carrega arquivos de lookup"""
     try:
         v0 = pd.read_excel('v_loock_up.xlsx', sheet_name=0)
         v1 = pd.read_excel('v_loock_up.xlsx', sheet_name=1)
@@ -697,9 +664,7 @@ def carregar_lookups():
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
 @st.cache_data(ttl=3600)
-@timer_decorator
 def carregar_importacao() -> pd.DataFrame:
-    """Carrega dados de importação"""
     try:
         df = pd.read_excel('ImportacaoMZ.xlsx')
         
@@ -729,34 +694,17 @@ def carregar_importacao() -> pd.DataFrame:
 
 # Carregar dados
 @st.cache_resource
-@timer_decorator
-def carregar_todos_dados_melhorado():
-    """Versão melhorada do carregamento de dados"""
-    
-    with st.spinner("🔄 Carregando e validando dados do sistema..."):
-        # Carregar dados com validação
+def carregar_todos_dados():
+    with st.spinner("🔄 Carregando dados do sistema..."):
         vendas_df = carregar_vendas()
         plano_df = carregar_plano()
+        v0, v1, v2, v3, v4, v5 = carregar_lookups()
         import_df = carregar_importacao()
-        
-        # Validar estruturas críticas
-        colunas_vendas_esperadas = ['Data_Facturacao', 'Quantidade', 'V_Liquido']
-        if not validar_estrutura_dados(vendas_df, colunas_vendas_esperadas, "vendas"):
-            st.error("  ")
-        
-        # Carregar lookups
-        try:
-            v0, v1, v2, v3, v4, v5 = carregar_lookups()
-        except Exception as e:
-            logger.error(f"Erro ao carregar lookups: {e}")
-            v0, v1, v2, v3, v4, v5 = [pd.DataFrame()] * 6
-        
         return vendas_df, plano_df, v0, v1, v2, v3, v4, v5, import_df
 
-vendas_df, plano_df, v0, v1, v2, v3, v4, v5, import_df = carregar_todos_dados_melhorado()
+vendas_df, plano_df, v0, v1, v2, v3, v4, v5, import_df = carregar_todos_dados()
 
 # ============================================= PROCESSAMENTO DOS DATAFRAMES =============================================
-@timer_decorator
 def processar_dataframes():
     """Processa e combina os dataframes de vendas e plano"""
     try:
@@ -812,8 +760,14 @@ def processar_dataframes():
 DateSet_MT_Pln, vendas_df_MT, vendas_df_USD = processar_dataframes()
 
 # ============================================= LIMPEZA DE COLUNAS =============================================
+CLIENTES_CONGENERES = [
+    "AFR PETR", "B ENERGY", "BP", "CAC", "CAMEL", "DALBIT", "ENER", "EXOR",
+    "GLENCORE", "GTS", "IPM", "I2A", "LAKE OIL", "LIBERTY", "MCCI", "MITRA",
+    "MOUMERU", "MOZTOP", "NGUVU L", "PETRODA", "PETROGAL", "PESS", "PUMA",
+    "RUR", "TOP ENERGY", "TOTAL", "UNION", "VIVO"
+]
+
 def limpar_coluna_numerica(df: pd.DataFrame, col: str) -> pd.Series:
-    """Limpa colunas numéricas removendo caracteres especiais"""
     if col not in df.columns:
         return pd.Series([0.0] * len(df))
     
@@ -833,7 +787,7 @@ def criar_link_externo(url: str, texto: str, icone: str = "🌐"):
     return f"""
     <a href="{url}" target="_blank" style="text-decoration: none;">
         <div style="
-            background: #FF6B35;
+            background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
             color: white;
             padding: 0.75rem 1rem;
             border-radius: 8px;
@@ -850,91 +804,6 @@ def criar_link_externo(url: str, texto: str, icone: str = "🌐"):
         </div>
     </a>
     """
-
-# ============================================= SISTEMA DE RELATÓRIOS =============================================
-def gerar_relatorio_executivo(df_vendas: pd.DataFrame, df_importacao: pd.DataFrame) -> Dict:
-    """Gera relatório executivo com principais métricas"""
-    relatorio = {
-        'timestamp_geracao': datetime.now(),
-        'metricas_principais': {},
-        'alertas': [],
-        'tendencias': []
-    }
-    
-    # Cálculo de métricas principais
-    if not df_vendas.empty:
-        if 'V_Liquido_MT' in df_vendas.columns:
-            relatorio['metricas_principais']['total_vendas'] = df_vendas['V_Liquido_MT'].sum()
-        if 'Quantidade' in df_vendas.columns:
-            relatorio['metricas_principais']['volume_vendas'] = df_vendas['Quantidade'].sum()
-    
-    if not df_importacao.empty:
-        if 'Quantidade_TM' in df_importacao.columns:
-            relatorio['metricas_principais']['total_importacao'] = df_importacao['Quantidade_TM'].sum()
-    
-    return relatorio
-
-# ============================================= SISTEMA DE ALERTAS =============================================
-def verificar_alertas(df_vendas: pd.DataFrame, df_importacao: pd.DataFrame) -> List[Dict]:
-    """Verifica condições que requerem atenção"""
-    alertas = []
-    
-    # Alertas de vendas vs plano
-    if not df_vendas.empty and 'Plano_m³' in df_vendas.columns and 'Vendas m³' in df_vendas.columns:
-        total_vendas = df_vendas['Vendas m³'].sum()
-        total_plano = df_vendas['Plano_m³'].sum()
-        
-        if total_plano > 0:
-            desempenho = (total_vendas / total_plano * 100)
-            
-            if desempenho < 80:
-                alertas.append({
-                    'tipo': 'CRÍTICO',
-                    'mensagem': f'Desempenho abaixo do esperado: {desempenho:.1f}% do plano',
-                    'icone': '❌'
-                })
-            elif desempenho < 95:
-                alertas.append({
-                    'tipo': 'ATENÇÃO', 
-                    'mensagem': f'Desempenho próximo do limite: {desempenho:.1f}% do plano',
-                    'icone': '⚠️'
-                })
-    
-    # Alertas de dados vazios
-    if df_vendas.empty:
-        alertas.append({
-            'tipo': 'AVISO',
-            'mensagem': 'Dados de vendas não disponíveis',
-            'icone': '📊'
-        })
-        
-    if df_importacao.empty:
-        alertas.append({
-            'tipo': 'AVISO',
-            'mensagem': 'Dados de importação não disponíveis',
-            'icone': '📦'
-        })
-    
-    return alertas
-
-# ============================================= HEADER INTERATIVO =============================================
-def criar_header_interativo():
-    """Cria header com informações dinâmicas"""
-    ultima_atualizacao = st.session_state.get('ultima_atualizacao', datetime.now())
-    
-    col1, col2, col3 = st.columns([3, 1, 1])
-    
-    with col1:
-        st.markdown('<div class="main-header">Sistema de Gestão - Petromoc, SA</div>', unsafe_allow_html=True)
-    
-    with col2:
-        st.metric("Última Atualização", ultima_atualizacao.strftime("%d/%m/%Y %H:%M"))
-    
-    with col3:
-        if st.button("🔄 Atualizar Dados", use_container_width=True):
-            st.cache_data.clear()
-            st.session_state.ultima_atualizacao = datetime.now()
-            st.rerun()
 
 # ============================================= FUNÇÕES DO MENU LATERAL =============================================
 @st.cache_data(ttl=3600)
@@ -1011,14 +880,11 @@ def criar_secao_calendario_corrigida(opcoes: Dict[str, Any], tipo: str) -> tuple
         min_value=date(2015, 1, 1),
         max_value=date.today(),
         help=f"Filtra por data de {opcoes.get('coluna_data', 'data')}",
-        key=f"widget_{chave_calendario}"
+        key=f"widget_{chave_calendario}"  # Chave diferente para o widget
     )
     
-    # Validar e corrigir intervalo de datas
-    if len(date_range) == 2:
-        date_range = validar_intervalo_datas(date_range, opcoes.get('min_date', date(2015, 1, 1)), opcoes.get('max_date', date.today()))
-        
-        # Atualizar session_state apenas se a data mudou
+    # Atualizar session_state apenas se a data mudou
+    if len(date_range) == 2 and date_range[1] >= date_range[0]:
         if date_range != st.session_state[chave_calendario]:
             st.session_state[chave_calendario] = date_range
         
@@ -1026,6 +892,7 @@ def criar_secao_calendario_corrigida(opcoes: Dict[str, Any], tipo: str) -> tuple
         st.sidebar.caption(f"📊 Período selecionado: {dias} dias")
         return date_range
     else:
+        # Se seleção inválida, manter o valor anterior
         return st.session_state[chave_calendario]
 
 def limpar_filtros_session_state():
@@ -1038,8 +905,18 @@ def limpar_filtros_session_state():
     for key in keys_to_remove:
         del st.session_state[key]
 
+def limpar_filtros_vendas():
+    """Limpa apenas os filtros de vendas"""
+    keys_to_remove = []
+    for key in st.session_state.keys():
+        if key.startswith('filtro_vendas_') or key == 'date_range_vendas':
+            keys_to_remove.append(key)
+    
+    for key in keys_to_remove:
+        del st.session_state[key]
+
 def renderizar_menu_lateral_corrigido():
-    """Versão corrigida do menu lateral"""
+    """Versão corrigida do menu lateral COM CORREÇÃO DO NOME DO FILTRO"""
     filtros = {}
     
     # LOGO DA PETROMOC
@@ -1075,7 +952,7 @@ def renderizar_menu_lateral_corrigido():
             st.sidebar.warning("⚠️ Nenhum dado de importação disponível")
             return filtros
         
-        # SEÇÃO DE CALENDÁRIO PARA IMPORTAÇÃO
+        # SEÇÃO DE CALENDÁRIO PARA IMPORTAÇÃO (CORRIGIDA)
         date_range_import = criar_secao_calendario_corrigida(opcoes_import, "importacao")
         filtros['date_range'] = date_range_import
         filtros['tipo_dados'] = 'importacao'
@@ -1100,6 +977,7 @@ def renderizar_menu_lateral_corrigido():
         for coluna in colunas_filtradas_import:
             valores = opcoes_import[coluna]
             if valores:
+                # Inicializar session_state para este filtro se não existir
                 chave_filtro = f"filtro_import_{coluna}"
                 if chave_filtro not in st.session_state:
                     st.session_state[chave_filtro] = []
@@ -1111,6 +989,7 @@ def renderizar_menu_lateral_corrigido():
                     key=f"widget_{chave_filtro}"
                 )
                 
+                # Atualizar session_state
                 st.session_state[chave_filtro] = valores_selecionados
                 filtros[coluna] = valores_selecionados
     
@@ -1122,7 +1001,7 @@ def renderizar_menu_lateral_corrigido():
             st.sidebar.warning("⚠️ Nenhum dado de vendas disponível")
             return filtros
         
-        # SEÇÃO DE CALENDÁRIO PARA VENDAS
+        # SEÇÃO DE CALENDÁRIO PARA VENDAS (CORRIGIDA)
         date_range_vendas = criar_secao_calendario_corrigida(opcoes_vendas, "vendas")
         filtros['date_range'] = date_range_vendas
         filtros['tipo_dados'] = 'vendas'
@@ -1130,6 +1009,7 @@ def renderizar_menu_lateral_corrigido():
         # FILTROS ESPECÍFICOS DAS VENDAS
         st.sidebar.header("🔍 Filtros - Vendas")
         
+        # CORREÇÃO: SUBSTITUIR 'Gestor/Promotor' por 'Gestor / Promotor'
         sequencia_vendas = ['Ano', 'Combustivel', 'Sector/Sigla', 'Gestor / Promotor', 'Instalacao', 'Provincia']
         
         colunas_filtradas_vendas = []
@@ -1147,12 +1027,14 @@ def renderizar_menu_lateral_corrigido():
         for coluna in colunas_filtradas_vendas:
             valores = opcoes_vendas[coluna]
             if valores:
+                # CORREÇÃO: USAR NOME CORRETO 'Gestor / Promotor' NO SESSION_STATE
                 chave_coluna = coluna.replace('/', '_').replace(' ', '_')
                 chave_filtro = f"filtro_vendas_{chave_coluna}"
                 
                 if chave_filtro not in st.session_state:
                     st.session_state[chave_filtro] = []
                 
+                # CORREÇÃO: MOSTRAR NOME CORRETO 'Gestor / Promotor' NA INTERFACE
                 nome_exibicao = "Gestor / Promotor" if coluna == "Gestor / Promotor" else coluna
                 
                 valores_selecionados = st.sidebar.multiselect(
@@ -1162,10 +1044,11 @@ def renderizar_menu_lateral_corrigido():
                     key=f"widget_{chave_filtro}"
                 )
                 
+                # Atualizar session_state
                 st.session_state[chave_filtro] = valores_selecionados
                 filtros[coluna] = valores_selecionados
     
-    # BOTÕES DE AÇÃO
+    # BOTÕES DE AÇÃO (comuns a ambos os modos)
     st.sidebar.markdown("---")
     st.sidebar.header("⚡ Ações Rápidas")
     
@@ -1187,7 +1070,7 @@ def renderizar_menu_lateral_corrigido():
 def criar_card_metricas(titulo: str, valor_principal: str, subtitulo1: str = "", subtitulo2: str = "", icone: str = "📊", tipo_card: str = "default"):
     """Cria cards de métricas com cores vibrantes"""
     
-    card_class = "metric-card-petromoc"
+    card_class = "metric-card-petromoc"  # padrão
     
     if tipo_card == "industria":
         card_class = "metric-card-industria"
@@ -1302,6 +1185,7 @@ def criar_botao_download_csv(df: pd.DataFrame, nome_arquivo: str, descricao: str
         st.error(f"Erro ao gerar CSV: {e}")
 
 # ============================================= GRÁFICO DE LINHAS VENDAS vs PLANO =============================================
+
 def criar_grafico_linhas_vendas_plano(df_filtrado: pd.DataFrame):
     """Cria gráfico de linhas Vendas vs Plano por mês na ordem correta"""
     
@@ -1335,7 +1219,7 @@ def criar_grafico_linhas_vendas_plano(df_filtrado: pd.DataFrame):
         dados_mensais = df_grafico.groupby(['Ano', 'Mes']).agg({
             coluna_vendas: 'sum',
             coluna_plano: 'sum'
-        }).reset_index()
+        }).resetindex()
         
         # Renomear colunas para padrão
         dados_mensais = dados_mensais.rename(columns={
@@ -1391,8 +1275,8 @@ def criar_grafico_linhas_vendas_plano(df_filtrado: pd.DataFrame):
                 'variable': 'Legenda'
             },
             color_discrete_map={
-                'Vendas': "#FFC635",
-                'Plano': '#9D4EDD'
+                'Vendas': '#FF6B35',  # Laranja Petromoc
+                'Plano': '#9D4EDD'    # Roxo para plano
             }
         )
         
@@ -1486,6 +1370,7 @@ def criar_grafico_linhas_simulado():
     return fig
 
 # ============================================= ABA VENDAS COM TABELA E CARTÕES PRIMEIRO =============================================
+
 def criar_aba_vendas_com_tabela_primeiro(df_filtrado: pd.DataFrame, filtros: Dict):
     """Cria a aba de Vendas com tabela, cartões e gráfico de linha Vendas vs Plano"""
     
@@ -1505,7 +1390,7 @@ def criar_aba_vendas_com_tabela_primeiro(df_filtrado: pd.DataFrame, filtros: Dic
     st.markdown("#### 📋 Desempenho por Linha de Negócio")
     
     # ORDEM ESPECÍFICA SOLICITADA
-    linhas_negocio = config.linhas_negocio
+    linhas_negocio = ["Vulcan", "Consumidores", "Revendedores", "Bunkers", "Aviacao", "Reexportacao", "Armazenagem"]
     
     dados_tabela = []
     total_vendas = 0
@@ -1621,7 +1506,7 @@ def criar_aba_vendas_com_tabela_primeiro(df_filtrado: pd.DataFrame, filtros: Dic
     
     with col1:
         criar_card_metricas(
-            "Vendas Totals",
+            "Vendas Totais",
             f"{formatar_ptbr(total_vendas, 0)}",
             "Volume realizado",
             f"{len(linhas_negocio)} linhas de negócio",
@@ -1726,8 +1611,8 @@ def criar_aba_vendas_com_tabela_primeiro(df_filtrado: pd.DataFrame, filtros: Dic
         title='Vendas vs Plano por Linha de Negócio',
         barmode='group',
         color_discrete_map={
-            'Vendas (m³)': "#E29417",
-            'Plano (m³)': "#9C0FE7"
+            'Vendas (m³)': '#FF6B35',
+            'Plano (m³)': '#9D4EDD'
         },
         category_orders={"Linha de Negócio": linhas_negocio}
     )
@@ -1764,6 +1649,7 @@ def criar_aba_vendas_com_tabela_primeiro(df_filtrado: pd.DataFrame, filtros: Dic
             )
 
 # ============================================= FUNÇÕES PARA SCROLLER DE QUOTA DE MERCADO =============================================
+
 def criar_scroller_quota_mercado(total_industria_tm: float, total_petromoc_tm: float, total_congeneres_tm: float,
                                total_industria_m3: float, total_petromoc_m3: float, total_congeneres_m3: float,
                                perc_petromoc: float, perc_congeneres: float):
@@ -1845,7 +1731,7 @@ def criar_scroller_quota_petromoc(total_petromoc_tm: float, total_RELEASE_tm: fl
     ), unsafe_allow_html=True)
 
 # ============================================= FUNÇÕES PARA EXTRAIR DADOS REAIS DA IMPORTACAOMZ =============================================
-@timer_decorator
+
 def extrair_dados_garantias_bancarias(df_importacao: pd.DataFrame) -> pd.DataFrame:
     """
     Extrai dados de Garantias Bancárias diretamente do dataframe ImportacaoMZ
@@ -1936,13 +1822,11 @@ def extrair_dados_garantias_bancarias(df_importacao: pd.DataFrame) -> pd.DataFra
     
     return dados_garantias
 
-@timer_decorator
 def extrair_dados_portos_RELEASE_fh(df_importacao: pd.DataFrame) -> pd.DataFrame:
     """
     Extrai dados de Portos vs RELEASE/Financial Hold diretamente do dataframe ImportacaoMZ
     Ordem fixa: Maputo, Beira, Nacala, Pemba
     Inclui coluna de percentagem de Financial Hold
-    CORREÇÃO: Remove duplicatas de Nacala
     """
     
     if df_importacao.empty:
@@ -1959,7 +1843,7 @@ def extrair_dados_portos_RELEASE_fh(df_importacao: pd.DataFrame) -> pd.DataFrame
     coluna_porto = colunas_porto[0]
     
     # ORDEM FIXA DOS PORTOS
-    ORDEM_PORTOS = config.ordem_portos
+    ORDEM_PORTOS = ['Maputo', 'Beira', 'Nacala', 'Pemba']
     
     # Determinar colunas para RELEASE e financial hold
     colunas_RELEASE = [col for col in df_importacao.columns if any(termo in col.upper() for termo in ['RELEASE', 'PETRO_TM', 'QTD_PETRO'])]
@@ -2025,7 +1909,7 @@ def extrair_dados_portos_RELEASE_fh(df_importacao: pd.DataFrame) -> pd.DataFrame
         
         dados_portos = pd.DataFrame(dados_portos)
     
-    # CORREÇÃO CRÍTICA: REMOVER DUPLICATAS - Agrupar por porto e somar os valores
+    # CORREÇÃO: REMOVER DUPLICATAS - Agrupar por porto e somar os valores
     if not dados_portos.empty:
         dados_portos = dados_portos.groupby('Porto', as_index=False).agg({
             'RELEASE': 'sum',
@@ -2152,7 +2036,7 @@ def criar_analise_market_share_com_scroller(df_filtrado: pd.DataFrame):
         if col in df_processed.columns:
             df_processed[col] = limpar_coluna_numerica(df_processed, col)
 
-    for c in config.clientes_congeneres:
+    for c in CLIENTES_CONGENERES:
         if c in df_processed.columns:
             df_processed[c] = limpar_coluna_numerica(df_processed, c)
 
@@ -2165,7 +2049,7 @@ def criar_analise_market_share_com_scroller(df_filtrado: pd.DataFrame):
     elif 'Quantidade_TM' in df_processed.columns:
         total_petromoc_tm = df_processed["Quantidade_TM"].sum()
     
-    for c in config.clientes_congeneres:
+    for c in CLIENTES_CONGENERES:
         if c in df_processed.columns:
             total_congeneres_tm += df_processed[c].sum()
 
@@ -2235,8 +2119,8 @@ def criar_analise_market_share_com_scroller(df_filtrado: pd.DataFrame):
             title='Distribuição do Mercado',
             color='Empresa',
             color_discrete_map={
-                'Petromoc': "#E04208",
-                'Congênere': "#8DCD4E"
+                'Petromoc': '#FF6B35',
+                'Congênere': '#4ECDC4'
             }
         )
         fig_mercado.update_traces(textposition='inside', textinfo='percent+label')
@@ -2263,10 +2147,8 @@ def criar_analise_market_share_com_scroller(df_filtrado: pd.DataFrame):
         fig_petromoc.update_traces(textposition='inside', textinfo='percent+label')
         st.plotly_chart(fig_petromoc, use_container_width=True)
 
-
-        
-
 # ============================================= ABA IMPORTAÇÃO COMPLETA COM SCROLLER =============================================
+
 def criar_aba_importacao_com_dados_reais(df_filtrado: pd.DataFrame):
     """Cria a aba de Importação com dados reais, scroller animado e opções de download"""
     
@@ -2401,6 +2283,26 @@ def criar_aba_importacao_com_dados_reais(df_filtrado: pd.DataFrame):
     
     st.markdown("---")
     
+    # ========== DOWNLOADS - DADOS BRUTOS ==========
+    st.markdown("#### 📥 Download de Dados")
+    col_download1, col_download2 = st.columns(2)
+    
+    with col_download1:
+        criar_botao_download_excel(
+            df_filtrado, 
+            "dados_importacao_brutos", 
+            "Dados Brutos"
+        )
+    
+    with col_download2:
+        criar_botao_download_csv(
+            df_filtrado, 
+            "dados_importacao_brutos", 
+            "Dados Brutos"
+        )
+    
+    st.markdown("---")
+    
     # ========== GARANTIAS BANCÁRIAS ==========
     st.markdown("#### 🏦 Garantias Bancárias")
     
@@ -2473,7 +2375,7 @@ def criar_aba_importacao_com_dados_reais(df_filtrado: pd.DataFrame):
         dados_portos_clean = dados_portos.copy()
         
         # CORREÇÃO: Garantir ordem correta [Maputo, Beira, Nacala, Pemba, TOTAL GERAL]
-        ordem_correta = config.ordem_portos + ['TOTAL GERAL']
+        ordem_correta = ['Maputo', 'Beira', 'Nacala', 'Pemba', 'TOTAL GERAL']
         dados_portos_clean['Ordem'] = dados_portos_clean['Porto'].map({porto: idx for idx, porto in enumerate(ordem_correta)})
         dados_portos_clean['Ordem'] = dados_portos_clean['Ordem'].fillna(99)
         dados_portos_clean = dados_portos_clean.sort_values('Ordem').drop('Ordem', axis=1)
@@ -2486,7 +2388,7 @@ def criar_aba_importacao_com_dados_reais(df_filtrado: pd.DataFrame):
         for coluna in colunas_volume:
             if coluna in df_portos_display.columns:
                 df_portos_display[f'{coluna}_Formatado'] = df_portos_display[coluna].apply(
-                    lambda x: formatar_ptbr(x, 0) if pd.notna(x) else "0"
+                    lambda x: f"{formatar_ptbr(x, 0)} TM" if pd.notna(x) else "0 TM"
                 )
         
         # Formatar percentagem COM símbolo %
@@ -2496,112 +2398,1375 @@ def criar_aba_importacao_com_dados_reais(df_filtrado: pd.DataFrame):
             )
         
         # Selecionar colunas para exibição
-        colunas_exibicao_portos = ['Porto']
+        colunas_exibicao = ['Porto']
         for coluna in colunas_volume:
             if f'{coluna}_Formatado' in df_portos_display.columns:
-                colunas_exibicao_portos.append(f'{coluna}_Formatado')
+                colunas_exibicao.append(f'{coluna}_Formatado')
         
         if '% FINANCIAL HOLD_Formatado' in df_portos_display.columns:
-            colunas_exibicao_portos.append('% FINANCIAL HOLD_Formatado')
+            colunas_exibicao.append('% FINANCIAL HOLD_Formatado')
         
         # Renomear colunas
-        df_portos_display_final = df_portos_display[colunas_exibicao_portos].copy()
-        df_portos_display_final.columns = ['Porto', 'RELEASE (TM)', 'FINANCIAL HOLD (TM)', '% FINANCIAL HOLD']
+        df_display_portos = df_portos_display[colunas_exibicao].copy()
+        df_display_portos.columns = ['Porto', 'RELEASE (TM)', 'Financial Hold (TM)', '% Financial Hold']
         
         # Exibir tabela
         st.dataframe(
-            df_portos_display_final,
+            df_display_portos,
             use_container_width=True,
             hide_index=True
         )
         
         # DOWNLOADS - PORTOS
-        st.markdown("##### 📥 Download Dados dos Portos")
+        st.markdown("##### 📥 Download Dados de Portos")
         col_port1, col_port2 = st.columns(2)
         
         with col_port1:
             criar_botao_download_excel(
-                df_portos_display_final, 
+                df_display_portos, 
                 "dados_portos", 
-                "Dados dos Portos"
+                "Dados de Portos"
             )
         
         with col_port2:
             criar_botao_download_csv(
-                df_portos_display_final, 
+                df_display_portos, 
                 "dados_portos", 
-                "Dados dos Portos"
+                "Dados de Portos"
             )
+        
+        # ========== GRÁFICO DE BARRAS - PORTOS ==========
+        st.markdown("#### 📊 Visualização - Distribuição por Porto")
+        
+        # Preparar dados para gráfico (excluir linha "TOTAL GERAL")
+        dados_grafico = dados_portos_clean[dados_portos_clean['Porto'] != 'TOTAL GERAL'].copy()
+        
+        if not dados_grafico.empty:
+            # CORREÇÃO: Ordenar os dados para o gráfico na ordem correta
+            ORDEM_PORTOS_GRAFICO = ['Maputo', 'Beira', 'Nacala', 'Pemba']
+            dados_grafico = dados_grafico[dados_grafico['Porto'].isin(ORDEM_PORTOS_GRAFICO)]
+            dados_grafico['Porto'] = pd.Categorical(dados_grafico['Porto'], categories=ORDEM_PORTOS_GRAFICO, ordered=True)
+            dados_grafico = dados_grafico.sort_values('Porto')
+            
+            # CORREÇÃO: Criar DataFrame correto para gráfico de barras agrupadas
+            dados_melted = dados_grafico.melt(
+                id_vars=['Porto'], 
+                value_vars=['RELEASE', 'FINANCIAL HOLD'],
+                var_name='Tipo', 
+                value_name='Volume'
+            )
+            
+            fig = px.bar(
+                dados_melted,
+                x='Porto',
+                y='Volume',
+                color='Tipo',
+                title='Distribuição por Porto - RELEASE vs Financial Hold',
+                barmode='group',
+                color_discrete_map={
+                    'RELEASE': '#FF6B35',
+                    'FINANCIAL HOLD': '#4ECDC4'
+                },
+                category_orders={"Porto": ORDEM_PORTOS_GRAFICO}
+            )
+            fig.update_layout(
+                yaxis_title='Volume (TM)',
+                xaxis_title='Porto'
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # DOWNLOADS - GRÁFICO
+            st.markdown("##### 📥 Download Dados do Gráfico")
+            col_graf1, col_graf2 = st.columns(2)
+            
+            with col_graf1:
+                criar_botao_download_excel(
+                    dados_grafico[['Porto', 'RELEASE', 'FINANCIAL HOLD']], 
+                    "dados_grafico_portos", 
+                    "Dados do Gráfico"
+                )
+            
+            with col_graf2:
+                criar_botao_download_csv(
+                    dados_grafico[['Porto', 'RELEASE', 'FINANCIAL HOLD']], 
+                    "dados_grafico_portos", 
+                    "Dados do Gráfico"
+                )
     
     else:
         st.info("ℹ️ Nenhum dado de portos disponível")
+
+
+############################################################ ABA PROMOTORES ##################################################################################################        
+
+@st.cache_data(ttl=3600)
+def carregar_dados_MIS():
+    """Carrega e processa dados do MIS"""
+    try:
+        # 1. Carregar dados do MIS
+        MIS = pd.read_excel('MIS_.xlsx')
+        
+        # 2. Carregar lookup de clientes
+        v0 = pd.read_excel('v_loock_up.xlsx', sheet_name=0)
+        
+        # 3. Fazer merge com lookup
+        MIS = pd.merge(MIS, v0, left_on=['Emissor'], right_on=['Emissor'], how='left')
+        
+        # 4. CORREÇÃO: Padronizar nomes de colunas (remove espaços, caracteres especiais)
+        MIS.columns = MIS.columns.str.strip().str.upper()
+        
+        # 5. VALIDAR: Verificar se as colunas necessárias existem
+        colunas_verificar = ['DENTRO_PRAZO', '0_30_DIAS']
+        colunas_faltando = [col for col in colunas_verificar if col not in MIS.columns]
+        
+        if colunas_faltando:
+            logger.warning(f"Colunas faltando no MIS: {colunas_faltando}")
+            logger.info(f"Colunas disponíveis: {list(MIS.columns)}")
+            
+            # Tentar encontrar colunas com nomes similares
+            for coluna_procurada in colunas_faltando:
+                coluna_procurada_lower = coluna_procurada.lower()
+                colunas_similares = [col for col in MIS.columns if coluna_procurada_lower in col.lower()]
+                
+                if colunas_similares:
+                    logger.info(f"Colunas similares para '{coluna_procurada}': {colunas_similares}")
+        
+        # 6. CRIAR COLUNA Previsao_30_Dias
+        # Verificar se ambas as colunas existem
+        if 'DENTRO_PRAZO' in MIS.columns and '0_30_DIAS' in MIS.columns:
+            # Garantir que são numéricas
+            MIS['DENTRO_PRAZO'] = pd.to_numeric(MIS['DENTRO_PRAZO'], errors='coerce').fillna(0)
+            MIS['0_30_DIAS'] = pd.to_numeric(MIS['0_30_DIAS'], errors='coerce').fillna(0)
+            
+            # Calcular soma
+            MIS['PREVISAO_30_DIAS'] = MIS['DENTRO_PRAZO'] + MIS['0_30_DIAS']
+            
+            logger.info(f"Criada coluna 'PREVISAO_30_DIAS' com sucesso")
+            logger.info(f"Valores: DENTRO_PRAZO={MIS['DENTRO_PRAZO'].sum():.2f}, " +
+                       f"0_30_DIAS={MIS['0_30_DIAS'].sum():.2f}, " +
+                       f"PREVISAO_30_DIAS={MIS['PREVISAO_30_DIAS'].sum():.2f}")
+            
+        elif 'DENTRO_PRAZO' in MIS.columns:
+            # Se só tiver DENTRO_PRAZO
+            MIS['DENTRO_PRAZO'] = pd.to_numeric(MIS['DENTRO_PRAZO'], errors='coerce').fillna(0)
+            MIS['PREVISAO_30_DIAS'] = MIS['DENTRO_PRAZO']
+            logger.warning("Apenas 'DENTRO_PRAZO' disponível. Usando como 'PREVISAO_30_DIAS'")
+            
+        elif '0_30_DIAS' in MIS.columns:
+            # Se só tiver 0_30_DIAS
+            MIS['0_30_DIAS'] = pd.to_numeric(MIS['0_30_DIAS'], errors='coerce').fillna(0)
+            MIS['PREVISAO_30_DIAS'] = MIS['0_30_DIAS']
+            logger.warning("Apenas '0_30_DIAS' disponível. Usando como 'PREVISAO_30_DIAS'")
+            
+        else:
+            # Se nenhuma das colunas existir
+            MIS['PREVISAO_30_DIAS'] = 0
+            logger.error("Nenhuma das colunas necessárias encontrada para criar 'PREVISAO_30_DIAS'")
+        
+        # 7. DEBUG: Mostrar informações sobre as colunas criadas
+        if 'PREVISAO_30_DIAS' in MIS.columns:
+            logger.info(f"Coluna 'PREVISAO_30_DIAS' criada. Tipo: {MIS['PREVISAO_30_DIAS'].dtype}")
+            logger.info(f"Primeiros valores de 'PREVISAO_30_DIAS': {MIS['PREVISAO_30_DIAS'].head().tolist()}")
+        
+        return MIS
+        
+    except FileNotFoundError as e:
+        logger.error(f"Arquivo não encontrado: {str(e)}")
+        st.error(f"❌ Arquivo do MIS não encontrado: {str(e)}")
+        return pd.DataFrame()
+        
+    except Exception as e:
+        logger.error(f"Erro ao carregar MIS: {str(e)}", exc_info=True)
+        st.error(f"❌ Erro crítico ao carregar dados do MIS: {str(e)}")
+        return pd.DataFrame()
+
+def criar_tabela_divida_por_linha_negocio(mis_df: pd.DataFrame):
+    """Cria tabela de dívida por linha de negócio conforme especificação"""
+    
+    if mis_df.empty:
+        return pd.DataFrame()
+    
+    # Verificar quais colunas realmente existem
+    colunas_disponiveis = []
+    colunas_possiveis = ['LINHA NEG.', 'DIVIDA_TOTAL', 'DENTRO_PRAZO', 'PREVISAO_30_DIAS']
+    
+    for col in colunas_possiveis:
+        if col in mis_df.columns:
+            colunas_disponiveis.append(col)
+    
+    if len(colunas_disponiveis) < 2:  # Pelo menos LINHA NEG. e uma métrica
+        st.warning(f"⚠️ Colunas necessárias não encontradas no MIS. Colunas disponíveis: {list(mis_df.columns)}")
+        return pd.DataFrame()
+    
+    # Verificar se temos a coluna 'LINHA NEG.'
+    if 'LINHA NEG.' not in mis_df.columns:
+        # Tentar encontrar coluna alternativa
+        colunas_alternativas = ['LINHA_NEG', 'LINHA_NEGOCIO', 'LINHA DE NEGÓCIO', 'LINHA_NEGÓCIO', 'SECTOR/SIGLA']
+        for alt in colunas_alternativas:
+            if alt in mis_df.columns:
+                mis_df = mis_df.rename(columns={alt: 'LINHA NEG.'})
+                break
+        
+        if 'LINHA NEG.' not in mis_df.columns:
+            st.warning("⚠️ Coluna 'LINHA NEG.' não encontrada no MIS")
+            return pd.DataFrame()
+    
+    # Criar dicionário de agregação apenas com colunas que existem
+    agg_dict = {}
+    colunas_calculo = []
+    
+    if 'DIVIDA_TOTAL' in mis_df.columns:
+        agg_dict['DIVIDA_TOTAL'] = 'sum'
+        colunas_calculo.append('DIVIDA_TOTAL')
+    
+    if 'DENTRO_PRAZO' in mis_df.columns:
+        agg_dict['DENTRO_PRAZO'] = 'sum'
+        colunas_calculo.append('DENTRO_PRAZO')
+    
+    if 'PREVISAO_30_DIAS' in mis_df.columns:
+        agg_dict['PREVISAO_30_DIAS'] = 'sum'
+        colunas_calculo.append('PREVISAO_30_DIAS')
+    
+    if not agg_dict:
+        st.warning("⚠️ Nenhuma coluna numérica de dívida encontrada no MIS")
+        return pd.DataFrame()
+    
+    # Agrupar por linha de negócio
+    tabela_linhas = mis_df.groupby('LINHA NEG.').agg(agg_dict).reset_index()
+    
+    # Adicionar linha de Total
+    linha_total = {'LINHA NEG.': 'Total'}
+    
+    for col in colunas_calculo:
+        if col in tabela_linhas.columns:
+            linha_total[col] = tabela_linhas[col].sum()
+    
+    tabela_completa = pd.concat([tabela_linhas, pd.DataFrame([linha_total])], ignore_index=True)
+    
+    # Calcular percentuais se tivermos DIVIDA_TOTAL
+    if 'DIVIDA_TOTAL' in tabela_completa.columns:
+        total_divida = tabela_completa.loc[tabela_completa['LINHA NEG.'] == 'Total', 'DIVIDA_TOTAL'].iloc[0]
+        
+        if total_divida > 0:
+            tabela_completa['% sobre Total'] = (tabela_completa['DIVIDA_TOTAL'] / total_divida * 100).round(1)
+    
+    return tabela_completa
+
+
+
+def criar_tabela_top10_promotores(mis_df: pd.DataFrame):
+    """Cria tabela Top 10 Promotores com dados de dívida no formato correto"""
+    
+    if mis_df.empty:
+        return pd.DataFrame()
+    
+    # 1. IDENTIFICAR COLUNAS CORRETAS
+    colunas_necessarias = []
+    
+    # Buscar coluna de promotor
+    colunas_promotor = [col for col in mis_df.columns if 'GESTOR' in col or 'PROMOTOR' in col]
+    if colunas_promotor:
+        coluna_promotor = colunas_promotor[0]
+        colunas_necessarias.append(coluna_promotor)
+    else:
+        st.warning("⚠️ Coluna de promotor não encontrada")
+        return pd.DataFrame()
+    
+    # Buscar coluna de emissor
+    colunas_emissor = [col for col in mis_df.columns if 'EMISSOR' in col]
+    if colunas_emissor:
+        coluna_emissor = colunas_emissor[0]
+        colunas_necessarias.append(coluna_emissor)
+    else:
+        # Tentar alternativa
+        if 'Emissor' in mis_df.columns:
+            coluna_emissor = 'Emissor'
+            colunas_necessarias.append(coluna_emissor)
+        else:
+            # Criar coluna vazia se não existir
+            mis_df['EMISSOR'] = ''
+            coluna_emissor = 'EMISSOR'
+            colunas_necessarias.append(coluna_emissor)
+    
+    # Buscar coluna de nome do cliente
+    colunas_cliente = ['NOME_DO_CLIENTE', 'NOME_DO_CITE', 'NOMECLIENTE', 'CLIENTE']
+    for col_cliente in colunas_cliente:
+        if col_cliente in mis_df.columns:
+            colunas_necessarias.append(col_cliente)
+            break
+    else:
+        # Se não encontrar, adicionar coluna vazia
+        mis_df['NOME_CLIENTE'] = ''
+        colunas_necessarias.append('NOME_CLIENTE')
+    
+    # Adicionar colunas de dívida
+    for col in ['DIVIDA_TOTAL', 'DENTRO_PRAZO', 'PREVISAO_30_DIAS']:
+        if col in mis_df.columns:
+            colunas_necessarias.append(col)
+    
+    # 2. CRIAR TABELA AGRUPADA POR PROMOTOR
+    agg_dict = {}
+    for col in ['DIVIDA_TOTAL', 'DENTRO_PRAZO', 'PREVISAO_30_DIAS']:
+        if col in colunas_necessarias:
+            agg_dict[col] = 'sum'
+    
+    # Agrupar por promotor
+    if agg_dict:
+        tabela_agrupada = mis_df.groupby(coluna_promotor).agg(agg_dict).reset_index()
+        
+        # Ordenar por dívida total (maior primeiro)
+        if 'DIVIDA_TOTAL' in tabela_agrupada.columns:
+            tabela_agrupada = tabela_agrupada.sort_values('DIVIDA_TOTAL', ascending=False)
+    else:
+        tabela_agrupada = mis_df[[coluna_promotor]].drop_duplicates()
+    
+    # 3. PEGAR TOP 10 PROMOTORES
+    top10_promotores = tabela_agrupada.head(10)
+    
+    # 4. CRIAR TABELA FINAL COM TODOS OS DADOS DOS CLIENTES DO TOP 10
+    tabela_final = []
+    
+    # Primeiro adicionar os dados detalhados de cada promotor
+    for idx, row in top10_promotores.iterrows():
+        promotor = row[coluna_promotor]
+        
+        # Filtrar clientes deste promotor
+        clientes_promotor = mis_df[mis_df[coluna_promotor] == promotor]
+        
+        # Ordenar clientes por dívida total
+        if 'DIVIDA_TOTAL' in clientes_promotor.columns:
+            clientes_promotor = clientes_promotor.sort_values('DIVIDA_TOTAL', ascending=False)
+        
+        # Adicionar cada cliente como uma linha
+        for _, cliente_row in clientes_promotor.iterrows():
+            linha = {
+                'Gestor/Promotor': str(promotor) if pd.notna(promotor) else '',
+                'Emissor': str(cliente_row[coluna_emissor]) if pd.notna(cliente_row.get(coluna_emissor, '')) else '',
+                'Nome_do_Cliente': str(cliente_row[colunas_necessarias[2]]) if len(colunas_necessarias) > 2 else '',
+                'Dívida Total': cliente_row.get('DIVIDA_TOTAL', 0),
+                'Dentro Prazo': cliente_row.get('DENTRO_PRAZO', 0),
+                'Previsão 30 Dias': cliente_row.get('PREVISAO_30_DIAS', 0)
+            }
+            tabela_final.append(linha)
+    
+    # 5. ADICIONAR LINHA DE TOTAL
+    if tabela_final:
+        # Calcular totais
+        totais = {
+            'Gestor/Promotor': 'TOTAL',
+            'Emissor': '',
+            'Nome_do_Cliente': '',
+            'Dívida Total': sum(row['Dívida Total'] for row in tabela_final),
+            'Dentro Prazo': sum(row['Dentro Prazo'] for row in tabela_final),
+            'Previsão 30 Dias': sum(row['Previsão 30 Dias'] for row in tabela_final)
+        }
+        tabela_final.append(totais)
+    
+    # Converter para DataFrame
+    df_final = pd.DataFrame(tabela_final)
+    
+    return df_final
+
+def criar_aba_divida_promotores():
+    """Cria a parte de análise de dívida dos promotores"""
+    
+    st.markdown("#### 💰 Análise de Dívida - Linhas de Negócio")
+    
+    # Carregar dados do MIS
+    MIS_df = carregar_dados_MIS()
+    
+    if MIS_df.empty:
+        st.warning("⚠️ Nenhum dado do MIS disponível para análise de dívida")
+        return
+    
+    # ========== TABELA DE DÍVIDA POR LINHA DE NEGÓCIO ==========
+    tabela_linhas = criar_tabela_divida_por_linha_negocio(MIS_df)
+    
+    if not tabela_linhas.empty:
+        # Formatar tabela para exibição
+        df_linhas_display = tabela_linhas.copy()
+        
+        # Formatar colunas numéricas
+        colunas_numericas = ['DIVIDA_TOTAL', 'DENTRO_PRAZO', 'PREVISAO_30_DIAS']
+        colunas_disponiveis = [col for col in colunas_numericas if col in df_linhas_display.columns]
+        
+        for coluna in colunas_disponiveis:
+            df_linhas_display[coluna] = df_linhas_display[coluna].apply(
+                lambda x: f"MT {formatar_ptbr(x, 0)}" if pd.notna(x) else "MT 0"
+            )
+        
+        # Formatar percentual
+        if '% sobre Total' in df_linhas_display.columns:
+            df_linhas_display['% sobre Total'] = df_linhas_display['% sobre Total'].apply(
+                lambda x: f"{x:.1f}%" if pd.notna(x) else "0.0%"
+            )
+        
+        # Renomear colunas para exibição
+        rename_dict = {
+            'LINHA NEG.': 'Linha de Negócio',
+            'DIVIDA_TOTAL': 'Dívida Total',
+            'DENTRO_PRAZO': 'Dentro do Prazo',
+            'PREVISAO_30_DIAS': 'Previsão 30 Dias',
+            '% sobre Total': '% sobre Total'
+        }
+        
+        df_linhas_display = df_linhas_display.rename(columns=rename_dict)
+        
+        # Destacar linha de Total com cores mais vivas
+        def highlight_total(row):
+            if row['Linha de Negócio'] == 'Total':
+                return ['background-color: #FF6B35; color: white; font-weight: bold; font-size: 14px'] * len(row)
+            return ['background-color: #FFFFFF; color: #333333'] * len(row)
+        
+        # Aplicar cores alternadas para linhas
+        def color_alternate_rows(row_index):
+            colors = ['#F0F8FF', '#FFFFFF']  # Azul claro e branco
+            return f'background-color: {colors[row_index % 2]}; color: #333333'
+        
+        # Exibir tabela com cores
+        styled_df = df_linhas_display.style.apply(highlight_total, axis=1)
+        
+        # Aplicar cores alternadas apenas para linhas não-totais
+        for i in range(len(df_linhas_display)):
+            if df_linhas_display.iloc[i]['Linha de Negócio'] != 'Total':
+                styled_df = styled_df.apply(
+                    lambda x: [color_alternate_rows(i) for _ in x], 
+                    subset=pd.IndexSlice[i:i], axis=0
+                )
+        
+        st.dataframe(
+            styled_df,
+            use_container_width=True,
+            hide_index=True,
+            height=400
+        )
+        
+        # Gráfico de barras para dívida por linha de negócio - CORES MAIS VIVAS
+        st.markdown("##### 📊 Visualização - Dívida por Linha de Negócio")
+        
+        dados_grafico_linhas = tabela_linhas[tabela_linhas['LINHA NEG.'] != 'Total']
+        
+        if not dados_grafico_linhas.empty and 'DIVIDA_TOTAL' in dados_grafico_linhas.columns:
+            # Cores vibrantes em gradiente
+            cores_vibrantes = [
+                '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2',
+                '#EF476F', '#FFD166', '#06D6A0', '#073B4C', '#7209B7'
+            ]
+            
+            fig_barras_linhas = px.bar(
+                dados_grafico_linhas.sort_values('DIVIDA_TOTAL', ascending=False),
+                x='LINHA NEG.',
+                y='DIVIDA_TOTAL',
+                title='Dívida Total por Linha de Negócio',
+                color='DIVIDA_TOTAL',
+                color_continuous_scale='Viridis',  # Escala de cores vibrante
+                labels={'DIVIDA_TOTAL': 'Dívida Total (MT)', 'LINHA NEG.': 'Linha de Negócio'},
+                text_auto=True
+            )
+            
+            # Personalizar layout com cores vivas
+            fig_barras_linhas.update_traces(
+                marker_line_color='rgb(8,48,107)',
+                marker_line_width=1.5,
+                opacity=0.9,
+                texttemplate='%{y:,.0f}',
+                textposition='outside'
+            )
+            
+            fig_barras_linhas.update_layout(
+                xaxis_tickangle=-45,
+                plot_bgcolor='rgba(240,248,255,0.8)',
+                paper_bgcolor='rgba(255,255,255,0.9)',
+                font=dict(size=12, color='#333333'),
+                title_font=dict(size=18, color='#2C3E50'),
+                showlegend=True,
+                coloraxis_colorbar=dict(
+                    title="Valor (MT)",
+                    thickness=20,
+                    len=0.5
+                )
+            )
+            
+            st.plotly_chart(fig_barras_linhas, use_container_width=True)
     
     st.markdown("---")
     
-    # ========== DOWNLOADS - DADOS BRUTOS ==========
-    st.markdown("#### 📥 Download de Dados Brutos")
-    col_download1, col_download2 = st.columns(2)
     
-    with col_download1:
-        criar_botao_download_excel(
-            df_filtrado, 
-            "dados_importacao_brutos", 
-            "Dados Brutos"
-        )
+    # ========== TABELA TOP 10 PROMOTORES COM DÍVIDA ==========
+    st.markdown("#### 📋 Top 10 Promotores - Situação de Dívida")
     
-    with col_download2:
-        criar_botao_download_csv(
-            df_filtrado, 
-            "dados_importacao_brutos", 
-            "Dados Brutos"
+    tabela_top10 = criar_tabela_top10_promotores(MIS_df)
+    
+    if not tabela_top10.empty:
+        # Formatar tabela para exibição
+        df_top10_display = tabela_top10.copy()
+        
+        # Formatar colunas numéricas
+        colunas_numericas = ['Dívida Total', 'Dentro Prazo', 'Previsão 30 Dias']
+        colunas_numericas_existentes = [col for col in colunas_numericas if col in df_top10_display.columns]
+        
+        for coluna in colunas_numericas_existentes:
+            df_top10_display[coluna] = df_top10_display[coluna].apply(
+                lambda x: f"MT {formatar_ptbr(x, 0)}" if pd.notna(x) and x != 0 else "MT 0"
+            )
+        
+        # Destacar linha de TOTAL com cores vivas
+        def highlight_top10_total(row):
+            if row['Gestor/Promotor'] == 'TOTAL':
+                return ['background-color: #FF6B35; color: white; font-weight: bold; font-size: 14px'] * len(row)
+            
+            # Cores alternadas para linhas normais
+            row_idx = row.name if hasattr(row, 'name') else 0
+            color = '#F0F8FF' if row_idx % 2 == 0 else '#FFFFFF'
+            return [f'background-color: {color}; color: #333333'] * len(row)
+        
+        # Aplicar estilo
+        styled_top10 = df_top10_display.style.apply(highlight_top10_total, axis=1)
+        
+        # Exibir tabela formatada
+        st.dataframe(
+            styled_top10,
+            use_container_width=True,
+            hide_index=True,
+            height=400,
+            column_config={
+                'Gestor/Promotor': st.column_config.TextColumn(
+                    'Gestor/Promotor',
+                    width='medium'
+                ),
+                'Emissor': st.column_config.TextColumn(
+                    'Emissor',
+                    width='small'
+                ),
+                'Nome_do_Cliente': st.column_config.TextColumn(
+                    'Nome do Cliente',
+                    width='large'
+                ),
+                'Dívida Total': st.column_config.TextColumn(
+                    'Dívida Total',
+                    width='medium'
+                ),
+                'Dentro Prazo': st.column_config.TextColumn(
+                    'Dentro Prazo',
+                    width='medium'
+                ),
+                'Previsão 30 Dias': st.column_config.TextColumn(
+                    'Previsão 30 Dias',
+                    width='medium'
+                )
+            }
         )
+        
+        # 2. TABELA RESUMIDA DOS PROMOTORES (SOMENTE PROMOTORES)
+        st.markdown("##### 📊 Resumo por Promotor (Top 10)")
+        
+        # Criar tabela resumida apenas com os totais por promotor
+        tabela_resumo_promotores = []
+        
+        # Obter lista única de promotores (excluindo TOTAL)
+        promotores_unicos = [p for p in df_top10_display['Gestor/Promotor'].unique() 
+                           if p != 'TOTAL' and pd.notna(p)]
+        
+        for promotor in promotores_unicos[:10]:  # Top 10
+            dados_promotor = df_top10_display[df_top10_display['Gestor/Promotor'] == promotor]
+            
+            # Calcular totais (precisamos converter de volta para numérico)
+            def extrair_valor(valor_str):
+                try:
+                    if isinstance(valor_str, (int, float)):
+                        return float(valor_str)
+                    valor_limpo = str(valor_str).replace('MT ', '').replace('.', '').replace(',', '.')
+                    return float(valor_limpo) if valor_limpo.replace('.', '', 1).isdigit() else 0
+                except:
+                    return 0
+            
+            # Somar valores numéricos
+            total_divida = sum(extrair_valor(row['Dívida Total']) for _, row in dados_promotor.iterrows())
+            total_dentro = sum(extrair_valor(row['Dentro Prazo']) for _, row in dados_promotor.iterrows())
+            total_30_dias = sum(extrair_valor(row['Previsão 30 Dias']) for _, row in dados_promotor.iterrows())
+            
+            tabela_resumo_promotores.append({
+                'Promotor': promotor,
+                'Total Dívida': total_divida,
+                'Total Dentro Prazo': total_dentro,
+                'Total Previsão 30 Dias': total_30_dias,
+                'Nº Clientes': len(dados_promotor)
+            })
+        
+        # Criar DataFrame do resumo
+        if tabela_resumo_promotores:
+            df_resumo = pd.DataFrame(tabela_resumo_promotores)
+            df_resumo = df_resumo.sort_values('Total Dívida', ascending=False)
+            
+            # Formatar valores
+            for col in ['Total Dívida', 'Total Dentro Prazo', 'Total Previsão 30 Dias']:
+                if col in df_resumo.columns:
+                    df_resumo[col] = df_resumo[col].apply(
+                        lambda x: f"MT {formatar_ptbr(x, 0)}" if pd.notna(x) else "MT 0"
+                    )
+            
+            # Exibir resumo
+            st.dataframe(
+                df_resumo,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    'Promotor': st.column_config.TextColumn('Promotor', width='large'),
+                    'Total Dívida': st.column_config.TextColumn('Dívida Total', width='medium'),
+                    'Total Dentro Prazo': st.column_config.TextColumn('Dentro Prazo', width='medium'),
+                    'Total Previsão 30 Dias': st.column_config.TextColumn('Previsão 30 Dias', width='medium'),
+                    'Nº Clientes': st.column_config.NumberColumn('Nº Clientes', width='small')
+                }
+            )
+        
+        # 3. GRÁFICO DE BARRAS PARA TOP 10 PROMOTORES
+        st.markdown("##### 📈 Visualização do Top 10 - Dívida Total por Promotor")
+        
+        if tabela_resumo_promotores:
+            # Preparar dados para gráfico
+            df_grafico = pd.DataFrame(tabela_resumo_promotores)
+            
+            # Extrair valores numéricos para o gráfico
+            def extrair_valor_grafico(valor_str):
+                try:
+                    if isinstance(valor_str, (int, float)):
+                        return float(valor_str)
+                    return float(str(valor_str).replace('MT ', '').replace('.', '').replace(',', '.'))
+                except:
+                    return 0
+            
+            # Converter valores formatados de volta para numéricos
+            if 'Total Dívida' in df_grafico.columns:
+                df_grafico['Dívida_Numérica'] = df_grafico['Total Dívida'].apply(extrair_valor_grafico)
+                
+                # Ordenar por dívida
+                df_grafico = df_grafico.sort_values('Dívida_Numérica', ascending=False)
+                
+                # Cores vibrantes
+                cores_vibrantes = [
+                    '#FF0000', '#FF4500', '#FF8C00', '#FFA500', '#FFD700',
+                    '#FF6347', '#FF7F50', '#FFA07A', '#FFB6C1', '#FF69B4'
+                ]
+                
+                fig_barras = px.bar(
+                    df_grafico.head(10),
+                    x='Promotor',
+                    y='Dívida_Numérica',
+                    title='Top 10 Promotores - Dívida Total',
+                    color='Promotor',
+                    color_discrete_sequence=cores_vibrantes[:min(10, len(df_grafico))],
+                    labels={'Dívida_Numérica': 'Dívida Total (MT)', 'Promotor': 'Promotor'},
+                    text='Dívida_Numérica'
+                )
+                
+                fig_barras.update_traces(
+                    texttemplate='MT %{text:,.0f}',
+                    textposition='outside',
+                    marker_line_color='rgb(139,0,0)',
+                    marker_line_width=2,
+                    opacity=0.85
+                )
+                
+                fig_barras.update_layout(
+                    xaxis_tickangle=-45,
+                    plot_bgcolor='rgba(255,250,240,0.8)',
+                    paper_bgcolor='rgba(255,255,255,0.95)',
+                    font=dict(size=12, color='#2C3E50'),
+                    title_font=dict(size=18, color='#8B0000'),
+                    showlegend=False,
+                    yaxis=dict(
+                        title='Dívida Total (MT)',
+                        gridcolor='rgba(128,128,128,0.2)'
+                    )
+                )
+                
+                st.plotly_chart(fig_barras, use_container_width=True)
+    
+    
+    st.markdown("---")
+    
+    # ========== ANÁLISE DETALHADA POR PROMOTOR ==========
+    st.markdown("#### 🔍 Análise Detalhada por Promotor - Dívida")
+    
+    if not MIS_df.empty:
+        # Extrair lista de promotores únicos
+        colunas_promotor = [col for col in MIS_df.columns if 'GESTOR' in col or 'PROMOTOR' in col]
+        if colunas_promotor:
+            coluna_promotor_mis = colunas_promotor[0]
+            promotores_unicos = MIS_df[coluna_promotor_mis].dropna().unique()
+            
+            if len(promotores_unicos) > 0:
+                # Container com cor de fundo
+                with st.container():
+                    st.markdown("""
+                    <style>
+                    .promotor-selector {
+                        background-color: #F8F9FA;
+                        padding: 20px;
+                        border-radius: 10px;
+                        border-left: 5px solid #FF6B35;
+                        margin-bottom: 20px;
+                    }
+                    </style>
+                    """, unsafe_allow_html=True)
+                    
+                    col_seletor1, col_seletor2 = st.columns([1, 2])
+                    
+                    with col_seletor1:
+                        promotor_selecionado = st.selectbox(
+                            "👤 Selecione um promotor para análise detalhada:",
+                            options=sorted(promotores_unicos),
+                            key="select_promotor_divida_detalhada"
+                        )
+                    
+                    with col_seletor2:
+                        if promotor_selecionado:
+                            # Informações básicas do promotor
+                            st.info(f"📋 **Promotor selecionado:** {promotor_selecionado}")
+                
+                if promotor_selecionado:
+                    # Filtrar dados do promotor selecionado
+                    dados_promotor_mis = MIS_df[MIS_df[coluna_promotor_mis] == promotor_selecionado]
+                    
+                    if not dados_promotor_mis.empty:
+                        # Container para métricas com cores vivas
+                        st.markdown("""
+                        <style>
+                        .metric-card {
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            border-radius: 10px;
+                            padding: 15px;
+                            color: white;
+                            margin: 5px;
+                        }
+                        </style>
+                        """, unsafe_allow_html=True)
+                        
+                        col_det1, col_det2, col_det3, col_det4 = st.columns(4)
+                        
+                        with col_det1:
+                            divida_total = dados_promotor_mis['DIVIDA_TOTAL'].sum() if 'DIVIDA_TOTAL' in dados_promotor_mis.columns else 0
+                            st.markdown(f"""
+                            <div class="metric-card">
+                                <h3 style="margin:0; color:white;">💰 Dívida Total</h3>
+                                <h1 style="margin:5px 0; color:white;">MT {formatar_ptbr(divida_total, 0)}</h1>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        
+                        with col_det2:
+                            dentro_prazo = dados_promotor_mis['DENTRO_PRAZO'].sum() if 'DENTRO_PRAZO' in dados_promotor_mis.columns else 0
+                            percent_dentro = (dentro_prazo / divida_total * 100) if divida_total > 0 else 0
+                            st.markdown(f"""
+                            <div class="metric-card" style="background: linear-gradient(135deg, #06D6A0 0%, #118AB2 100%);">
+                                <h3 style="margin:0; color:white;">✅ Dentro do Prazo</h3>
+                                <h1 style="margin:5px 0; color:white;">MT {formatar_ptbr(dentro_prazo, 0)}</h1>
+                                <p style="margin:0; color:white;">{percent_dentro:.1f}% do total</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        
+                        with col_det3:
+                            previsao_30 = dados_promotor_mis['PREVISAO_30_DIAS'].sum() if 'PREVISAO_30_DIAS' in dados_promotor_mis.columns else 0
+                            percent_30 = (previsao_30 / divida_total * 100) if divida_total > 0 else 0
+                            st.markdown(f"""
+                            <div class="metric-card" style="background: linear-gradient(135deg, #FF9A00 0%, #FF6B35 100%);">
+                                <h3 style="margin:0; color:white;">⏳ Previsão 30 Dias</h3>
+                                <h1 style="margin:5px 0; color:white;">MT {formatar_ptbr(previsao_30, 0)}</h1>
+                                <p style="margin:0; color:white;">{percent_30:.1f}% do total</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        
+                        with col_det4:
+                            outros_valores = divida_total - dentro_prazo - previsao_30
+                            percent_outros = (outros_valores / divida_total * 100) if divida_total > 0 else 0
+                            st.markdown(f"""
+                            <div class="metric-card" style="background: linear-gradient(135deg, #EF476F 0%, #7209B7 100%);">
+                                <h3 style="margin:0; color:white;">📊 Outros Vencimentos</h3>
+                                <h1 style="margin:5px 0; color:white;">MT {formatar_ptbr(outros_valores, 0)}</h1>
+                                <p style="margin:0; color:white;">{percent_outros:.1f}% do total</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        
+                        # Tabela de clientes do promotor com cores vivas
+                        st.markdown(f"##### 👥 Clientes de {promotor_selecionado}")
+                        
+                        # Criar lista de colunas para exibição
+                        colunas_exibicao = []
+                        
+                        # Procurar coluna de nome do cliente
+                        colunas_cliente = ['NOME_DO_CLIENTE', 'NOME_DO_CITE', 'NOMECLIENTE', 'CLIENTE']
+                        for col_cliente in colunas_cliente:
+                            if col_cliente in dados_promotor_mis.columns:
+                                colunas_exibicao.append(col_cliente)
+                                break
+                        
+                        # Adicionar colunas numéricas
+                        for col in ['DIVIDA_TOTAL', 'DENTRO_PRAZO', 'PREVISAO_30_DIAS']:
+                            if col in dados_promotor_mis.columns:
+                                colunas_exibicao.append(col)
+                        
+                        if colunas_exibicao:
+                            clientes_promotor = dados_promotor_mis[colunas_exibicao].copy()
+                            
+                            # Renomear colunas para exibição
+                            rename_dict_clientes = {
+                                'NOME_DO_CLIENTE': 'Nome do Cliente',
+                                'NOME_DO_CITE': 'Nome do Cliente',
+                                'NOMECLIENTE': 'Nome do Cliente',
+                                'CLIENTE': 'Nome do Cliente',
+                                'DIVIDA_TOTAL': 'Dívida Total',
+                                'DENTRO_PRAZO': 'Dentro Prazo',
+                                'PREVISAO_30_DIAS': 'Previsão 30 Dias'
+                            }
+                            clientes_promotor = clientes_promotor.rename(columns=rename_dict_clientes)
+                            
+                            # Ordenar por dívida total
+                            if 'Dívida Total' in clientes_promotor.columns:
+                                clientes_promotor = clientes_promotor.sort_values('Dívida Total', ascending=False)
+                            
+                            # Formatar valores monetários
+                            for col in ['Dívida Total', 'Dentro Prazo', 'Previsão 30 Dias']:
+                                if col in clientes_promotor.columns:
+                                    clientes_promotor[col] = clientes_promotor[col].apply(
+                                        lambda x: f"MT {formatar_ptbr(x, 0)}" if pd.notna(x) else "MT 0"
+                                    )
+                            
+                            # Estilizar a tabela com cores vivas
+                            def highlight_clientes(row):
+                                # Destacar os 3 maiores valores
+                                try:
+                                    valor_str = row['Dívida Total'].replace('MT ', '').replace('.', '').replace(',', '.')
+                                    valor = float(valor_str) if valor_str.replace('.', '', 1).isdigit() else 0
+                                    
+                                    if valor > 0 and row.name < 3:  # Primeiros 3 lugares
+                                        return ['background-color: #FFD700; color: #333333; font-weight: bold'] * len(row)
+                                    elif valor == 0:
+                                        return ['background-color: #90EE90; color: #333333'] * len(row)
+                                except:
+                                    pass
+                                return [''] * len(row)
+                            
+                            styled_clientes = clientes_promotor.style.apply(highlight_clientes, axis=1)
+                            
+                            # Aplicar cores alternadas
+                            def color_clientes_rows(df):
+                                """Aplica cores alternadas de forma segura"""
+                                if df.empty:
+                                  return pd.DataFrame('', index=df.index, columns=df.columns)
+    
+                                styles = pd.DataFrame('', index=df.index, columns=df.columns)
+    
+                                try:
+                                  for i in range(len(df)):
+                                      color = '#E8F4FD' if i % 2 == 0 else '#FFFFFF'
+            
+                                      # Aplicar a todas as colunas
+                                      for col in df.columns:
+                                          styles.iloc[i, df.columns.get_loc(col)] = f'background-color: {color}; color: #333333'
+                                except Exception as e:
+                                  # Em caso de erro, retornar sem estilo
+                                  print(f"Erro na aplicação de cores: {e}")
+    
+                                return styles
+                            
+                            for i in range(len(clientes_promotor)):
+                                styled_clientes = styled_clientes.apply(
+                                    lambda x: [color_clientes_rows(i) for _ in x], 
+                                    subset=pd.IndexSlice[i:i], axis=0
+                                )
+                
+                            try:
+                                st.dataframe(styled_clientes, use_container_width=True, height=300)
+                            except Exception as e:
+                               # Exibir dados sem formatação em caso de erro
+                                st.warning(f"⚠️ Erro na formatação: {str(e)[:100]}...")
+                                st.dataframe(clientes_promotor, use_container_width=True, height=300)
+                            
+                            # Gráfico de pizza para distribuição da dívida por cliente
+                            if 'Dívida Total' in clientes_promotor.columns:
+                                st.markdown(f"##### 📈 Distribuição da Dívida - {promotor_selecionado}")
+                                
+                                # Extrair valores numéricos para o gráfico
+                                valores = []
+                                for val in clientes_promotor['Dívida Total'].head(10):  # Top 10 clientes
+                                    try:
+                                        valor_str = val.replace('MT ', '').replace('.', '').replace(',', '.')
+                                        valor = float(valor_str) if valor_str.replace('.', '', 1).isdigit() else 0
+                                        valores.append(valor)
+                                    except:
+                                        valores.append(0)
+                                
+                                nomes = clientes_promotor['Nome do Cliente'].head(10).tolist()
+                                
+                                if valores and any(v > 0 for v in valores):
+                                    # Cores vibrantes para o gráfico de pizza
+                                    cores_pizza = [
+                                        '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF',
+                                        '#00FFFF', '#FFA500', '#800080', '#008000', '#000080'
+                                    ]
+                                    
+                                    fig_pizza = px.pie(
+                                        names=nomes,
+                                        values=valores,
+                                        title=f'Distribuição da Dívida - {promotor_selecionado}',
+                                        color_discrete_sequence=cores_pizza
+                                    )
+                                    
+                                    fig_pizza.update_traces(
+                                        textposition='inside',
+                                        textinfo='percent+label',
+                                        marker=dict(line=dict(color='#FFFFFF', width=2))
+                                    )
+                                    
+                                    fig_pizza.update_layout(
+                                        showlegend=True,
+                                        legend=dict(
+                                            font=dict(size=12, color='#333333'),
+                                            bgcolor='rgba(255,255,255,0.8)',
+                                            bordercolor='#333333',
+                                            borderwidth=1
+                                        )
+                                    )
+                                    
+                                    st.plotly_chart(fig_pizza, use_container_width=True)
+    
+    # ========== DOWNLOAD DE DADOS ==========
+    st.markdown("---")
+    st.markdown("#### 📥 Download dos Dados de Dívida")
+    
+    with st.expander("📊 Opções de Exportação"):
+        col_dl1, col_dl2, col_dl3 = st.columns(3)
+        
+        with col_dl1:
+            if 'tabela_linhas' in locals() and not tabela_linhas.empty:
+                criar_botao_download_excel(
+                    tabela_linhas,
+                    "divida_linhas_negocio",
+                    "Dívida por Linha de Negócio"
+                )
+        
+        with col_dl2:
+            if 'tabela_top10' in locals() and not tabela_top10.empty:
+                criar_botao_download_excel(
+                    tabela_top10,
+                    "top10_promotores_divida",
+                    "Top 10 Promotores - Dívida"
+                )
+        
+        with col_dl3:
+            # Adicionar botão para download de dados detalhados do promotor selecionado
+            if 'dados_promotor_mis' in locals() and not dados_promotor_mis.empty:
+                criar_botao_download_excel(
+                    dados_promotor_mis,
+                    f"detalhes_divida_{promotor_selecionado.replace(' ', '_')}",
+                    f"Detalhes da Dívida - {promotor_selecionado}"
+                )
 
-# ============================================= MAIN APPLICATION =============================================
-def main():
-    """Função principal da aplicação"""
+                
+
+def criar_aba_promotores(df_filtrado: pd.DataFrame):
+    """Cria a aba de Análise de Promotores com dados de DateSet_MT_Pln"""
     
-    # Header interativo
-    criar_header_interativo()
+    st.markdown('<div class="section-title">👥 Análise de Promotores - Desempenho Comercial</div>', unsafe_allow_html=True)
     
-    # Sistema de alertas
-    alertas = verificar_alertas(vendas_df, import_df)
-    if alertas:
-        with st.container():
-            st.markdown("#### 🔔 Alertas do Sistema")
-            for alerta in alertas:
-                if alerta['tipo'] == 'CRÍTICO':
-                    st.error(f"{alerta['icone']} **{alerta['tipo']}**: {alerta['mensagem']}")
-                elif alerta['tipo'] == 'ATENÇÃO':
-                    st.warning(f"{alerta['icone']} **{alerta['tipo']}**: {alerta['mensagem']}")
-                else:
-                    st.info(f"{alerta['icone']} **{alerta['tipo']}**: {alerta['mensagem']}")
+    # Criar tabs para separar análise de vendas e dívida
+    tab_vendas, tab_divida = st.tabs(["📈 Análise de Vendas", "💰 Análise de Dívida"])
     
-    # Menu lateral
-    filtros = renderizar_menu_lateral_corrigido()
+    with tab_vendas:
+        criar_aba_vendas_promotores(df_filtrado)
     
-    if not filtros:
-        st.info("💡 Selecione um modo de trabalho no menu lateral para começar")
+    with tab_divida:
+        criar_aba_divida_promotores()
+
+
+
+def criar_aba_vendas_promotores(df_filtrado: pd.DataFrame):
+    """Cria a parte de análise de vendas dos promotores"""
+    
+    if df_filtrado.empty:
+        st.warning("⚠️ Nenhum dado disponível para análise de vendas dos promotores")
         return
     
+    # Verificar se temos a coluna correta para promotores
+    colunas_promotor = [
+        'Gestor / Promotor',  # Coluna mais provável baseada no seu sistema
+        'Promotor',
+        'Gestor_Promotor',
+        'Vendedor',
+        'Comercial',
+        'Emissor'  # Fallback caso não tenha coluna específica
+    ]
+    
+    coluna_promotor = None
+    for col in colunas_promotor:
+        if col in df_filtrado.columns:
+            coluna_promotor = col
+            break
+    
+    if not coluna_promotor:
+        st.error("❌ Não foi possível encontrar coluna de promotor/gestor nos dados de vendas")
+        # Mostrar colunas disponíveis para debugging
+        st.write("Colunas disponíveis no DataFrame:", list(df_filtrado.columns))
+        return
+    
+    # ========== CARTÕES DE MÉTRICAS GERAIS ==========
+    st.markdown("#### 🎯 Visão Geral dos Promotores - Vendas")
+    
+    # Estatísticas básicas
+    total_promotores = df_filtrado[coluna_promotor].nunique()
+    
+    # Verificar se temos coluna de quantidade
+    coluna_quantidade = None
+    colunas_quantidade = ['Quantidade', 'Vendas m³', 'Volume']
+    for col in colunas_quantidade:
+        if col in df_filtrado.columns:
+            coluna_quantidade = col
+            break
+    
+    total_vendas = 0
+    if coluna_quantidade:
+        total_vendas = df_filtrado[coluna_quantidade].sum()
+    
+    # Verificar se temos coluna de valor
+    coluna_valor = None
+    colunas_valor = ['V_Liquido', 'Valor', 'Vendas_MT']
+    for col in colunas_valor:
+        if col in df_filtrado.columns:
+            coluna_valor = col
+            break
+    
+    total_valor = 0
+    if coluna_valor:
+        total_valor = df_filtrado[coluna_valor].sum()
+    
+    # Identificar coluna de meta/plano
+    colunas_plano = ['Plano_m³', 'Plano', 'Quantidade_Plano', 'Meta']
+    coluna_plano = None
+    for col in colunas_plano:
+        if col in df_filtrado.columns:
+            coluna_plano = col
+            break
+    
+    total_plano = 0
+    if coluna_plano:
+        total_plano = df_filtrado[coluna_plano].sum()
+    
+    taxa_atingimento = (total_vendas / total_plano * 100) if total_plano > 0 else 0
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        criar_card_metricas(
+            "Total Promotores",
+            str(total_promotores),
+            "Ativos no período",
+            f"{len(df_filtrado)} transações",
+            "👥",
+            "petromoc"
+        )
+    
+    with col2:
+        criar_card_metricas(
+            "Volume Total",
+            f"{formatar_ptbr(total_vendas, 0)}",
+            "m³ vendidos",
+            f"MT {formatar_ptbr(total_valor, 0)}" if coluna_valor else "",
+            "📊",
+            "industria"
+        )
+    
+    with col3:
+        criar_card_metricas(
+            "Meta do Período",
+            f"{formatar_ptbr(total_plano, 0)}" if coluna_plano else "N/A",
+            "m³ planejados" if coluna_plano else "Meta não definida",
+            "Volume planejado" if coluna_plano else "",
+            "🎯",
+            "plano"
+        )
+    
+    with col4:
+        status_cor = "congenere" if taxa_atingimento >= 100 else "RELEASE" if taxa_atingimento >= 80 else "industria"
+        criar_card_metricas(
+            "Taxa de Atingimento",
+            f"{taxa_atingimento:.1f}%" if coluna_plano else "N/A",
+            "Meta vs Realizado" if coluna_plano else "Sem meta definida",
+            f"{'+' if taxa_atingimento >= 100 else ''}{taxa_atingimento - 100:.1f}% vs meta" if coluna_plano else "",
+            "📈" if taxa_atingimento >= 100 else "📉",
+            status_cor if coluna_plano else "petromoc"
+        )
+    
+    st.markdown("---")
+    
+    # ========== TABELA DE DESEMPENHO POR PROMOTOR ==========
+    st.markdown("#### 📋 Ranking de Promotores - Vendas")
+    
+    try:
+        # Criar dicionário para agregação
+        agg_dict = {}
+        
+        if coluna_quantidade:
+            agg_dict[coluna_quantidade] = 'sum'
+        
+        if coluna_valor:
+            agg_dict[coluna_valor] = 'sum'
+        
+        if coluna_plano:
+            agg_dict[coluna_plano] = 'sum'
+        
+        if not agg_dict:
+            st.warning("⚠️ Nenhuma coluna numérica disponível para análise")
+            return
+        
+        # Agrupar por promotor
+        desempenho_promotores = df_filtrado.groupby(coluna_promotor).agg(agg_dict).reset_index()
+        
+        # Calcular métricas adicionais
+        if coluna_quantidade and coluna_plano:
+            desempenho_promotores['Variação (m³)'] = desempenho_promotores[coluna_quantidade] - desempenho_promotores[coluna_plano]
+            desempenho_promotores['Atingimento (%)'] = (desempenho_promotores[coluna_quantidade] / desempenho_promotores[coluna_plano] * 100).round(1)
+            
+            # Ordenar por atingimento
+            desempenho_promotores = desempenho_promotores.sort_values('Atingimento (%)', ascending=False)
+            
+            # Adicionar ranking
+            desempenho_promotores['Ranking'] = range(1, len(desempenho_promotores) + 1)
+            
+            # Selecionar colunas para exibição
+            colunas_exibicao = [
+                'Ranking',
+                coluna_promotor,
+                coluna_quantidade,
+                coluna_plano,
+                'Variação (m³)',
+                'Atingimento (%)'
+            ]
+            
+            if coluna_valor:
+                colunas_exibicao.append(coluna_valor)
+            
+        else:
+            # Se não temos plano, mostrar apenas volume
+            if coluna_quantidade:
+                desempenho_promotores = desempenho_promotores.sort_values(coluna_quantidade, ascending=False)
+                
+                # Calcular percentual sobre total
+                total_geral = desempenho_promotores[coluna_quantidade].sum()
+                desempenho_promotores['Participação (%)'] = (desempenho_promotores[coluna_quantidade] / total_geral * 100).round(1)
+                
+                # Adicionar ranking
+                desempenho_promotores['Ranking'] = range(1, len(desempenho_promotores) + 1)
+                
+                # Selecionar colunas para exibição
+                colunas_exibicao = [
+                    'Ranking',
+                    coluna_promotor,
+                    coluna_quantidade,
+                    'Participação (%)'
+                ]
+                
+                if coluna_valor:
+                    colunas_exibicao.append(coluna_valor)
+        
+        # Formatar dados para exibição
+        df_display = desempenho_promotores.copy()
+        
+        # Formatar colunas numéricas
+        for col in [coluna_quantidade, 'Variação (m³)']:
+            if col in df_display.columns:
+                df_display[col] = df_display[col].apply(
+                    lambda x: formatar_ptbr(x, 0) if pd.notna(x) else "0"
+                )
+        
+        if coluna_plano and coluna_plano in df_display.columns:
+            df_display[coluna_plano] = df_display[coluna_plano].apply(
+                lambda x: formatar_ptbr(x, 0) if pd.notna(x) else "0"
+            )
+        
+        # Formatar colunas percentuais
+        for col in ['Atingimento (%)', 'Participação (%)']:
+            if col in df_display.columns:
+                df_display[col] = df_display[col].apply(
+                    lambda x: f"{x:.1f}%" if pd.notna(x) else "0.0%"
+                )
+        
+        # Formatar coluna monetária
+        if coluna_valor and coluna_valor in df_display.columns:
+            df_display[coluna_valor] = df_display[coluna_valor].apply(
+                lambda x: f"MT {formatar_ptbr(x, 0)}" if pd.notna(x) else "MT 0"
+            )
+        
+        # Exibir tabela
+        st.dataframe(
+            df_display[colunas_exibicao],
+            use_container_width=True,
+            height=400
+        )
+        
+    except Exception as e:
+        st.error(f"❌ Erro ao criar tabela de desempenho: {str(e)}")
+        st.write("DataFrame columns:", list(df_filtrado.columns))
+        st.write("coluna_promotor:", coluna_promotor)
+        return
+    
+
+    
+    st.markdown("---")
+    
+    # ========== DOWNLOAD DE DADOS ==========
+    st.markdown("#### 📥 Download dos Dados de Vendas")
+    
+    try:
+        with st.expander("📊 Opções de Exportação"):
+            col_dl1, col_dl2, col_dl3 = st.columns(3)
+            
+            with col_dl1:
+                if 'desempenho_promotores' in locals() and not desempenho_promotores.empty:
+                    criar_botao_download_excel(
+                        desempenho_promotores,
+                        "desempenho_promotores_vendas",
+                        "Dados Completos - Vendas"
+                    )
+            
+            with col_dl2:
+                if 'desempenho_promotores' in locals() and not desempenho_promotores.empty:
+                    criar_botao_download_csv(
+                        desempenho_promotores,
+                        "desempenho_promotores_vendas",
+                        "Dados Completos - Vendas"
+                    )
+            
+            with col_dl3:
+                # Relatório resumido
+                resumo = {
+                    'Métrica': ['Total Promotores', 'Volume Total (m³)', 'Valor Total (MT)', 
+                              'Meta Total (m³)', 'Atingimento (%)'],
+                    'Valor': [total_promotores, total_vendas, total_valor, total_plano, taxa_atingimento]
+                }
+                df_resumo = pd.DataFrame(resumo)
+                criar_botao_download_excel(
+                    df_resumo,
+                    "resumo_promotores_vendas",
+                    "Relatório Resumido - Vendas"
+                )
+    except Exception as e:
+        st.warning(f"⚠️ Erro nas opções de download: {str(e)}")
+    
+
+
+# ============================================= FUNÇÃO PRINCIPAL =============================================
+
+def main():
+    """Função principal"""
+    
+# Adicione no início da sua função principal
+    st.markdown("""
+<style>
+    /* Estilos gerais para tabelas */
+    .stDataFrame {
+        border: 2px solid #FF6B35;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    /* Cores para botões */
+    .stButton > button {
+        background-color: #FF6B35;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        padding: 10px 20px;
+        font-weight: bold;
+    }
+    
+    .stButton > button:hover {
+        background-color: #FF4500;
+        color: white;
+    }
+    
+    /* Estilos para selects */
+    .stSelectbox {
+        background-color: #F0F8FF;
+        border-radius: 5px;
+        padding: 5px;
+    }
+    
+    /* Cores para métricas */
+    .metric-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        padding: 15px;
+        color: white;
+        margin: 5px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+
+    # HEADER PRINCIPAL
+    st.markdown('<h1 class="main-header">Sistema de Gestão - Petromoc, SA</h1>', unsafe_allow_html=True)
+    
+    # MENU LATERAL
+    with st.sidebar:
+        filtros = renderizar_menu_lateral_corrigido()
+    
+    # VERIFICAR SE TEMOS DADOS
+    if DateSet_MT_Pln.empty and import_df.empty:
+        st.error("""
+        ❌ Nenhum dado disponível para análise.
+        
+        **Soluções possíveis:**
+        1. Verifique se os arquivos de dados estão na pasta correta
+        2. Confirme os nomes dos arquivos:
+           - Vds_2023_Comb_.xlsx, Vds_2024_Comb_.xlsx, Vds_2025_Comb_.xlsx
+           - PlanComb_2023.xlsx, PlanComb_2024.xlsx, PlanComb_2025.xlsx
+           - ImportacaoMZ.xlsx
+           - v_loock_up.xlsx
+        3. Verifique as permissões de acesso aos arquivos
+        """)
+        return
+    
+    # PROCESSAR COM BASE NO MODO SELECIONADO
     modo_trabalho = filtros.get('modo_trabalho', 'Importação')
     
-    # Processar dados baseado no modo selecionado
-    if modo_trabalho == "Importação":
-        df_filtrado = aplicar_filtros_importacao(import_df, filtros)
-        criar_aba_importacao_com_dados_reais(df_filtrado)
+    if modo_trabalho == "Vendas":
+        # APLICAR FILTROS NAS VENDAS
+        df_filtrado_vendas = aplicar_filtros_vendas(DateSet_MT_Pln, filtros)
         
-    elif modo_trabalho == "Vendas":
-        df_filtrado = aplicar_filtros_vendas(DateSet_MT_Pln, filtros)
-        criar_aba_vendas_com_tabela_primeiro(df_filtrado, filtros)
+        # CRIAR ABA DE VENDAS COM TABELA PRIMEIRO
+        criar_aba_vendas_com_tabela_primeiro(df_filtrado_vendas, filtros)
         
-    else:
-        st.info(f"🚧 Módulo {modo_trabalho} em desenvolvimento")
-        st.write("Esta funcionalidade estará disponível em breve!")
+    elif modo_trabalho == "Importação":
+        # APLICAR FILTROS NA IMPORTAÇÃO
+        df_filtrado_importacao = aplicar_filtros_importacao(import_df, filtros)
+        
+        # CRIAR ABA DE IMPORTAÇÃO COM SCROLLER
+        criar_aba_importacao_com_dados_reais(df_filtrado_importacao)
+        
+    elif modo_trabalho == "Promotores":
+        # APLICAR FILTROS NAS VENDAS
+        df_filtrado_promotores = aplicar_filtros_vendas(DateSet_MT_Pln, filtros)
+        
+        # CRIAR ABA DE PROMOTORES
+        criar_aba_promotores(df_filtrado_promotores)
+        
+    elif modo_trabalho == "Stock":
+        st.info("👥 Módulo Stock em desenvolvimento...")
+        st.write("Em breve: Análise de desempenho de Stock")
+        
+    elif modo_trabalho == "Caixa_e_Bancos":
+        st.info("👥 Módulo Caixa_e_Bancos em desenvolvimento...")
+        st.write("Em breve: Análise de desempenho de Caixa_e_Bancos")
+        
+    elif modo_trabalho == "KPIs":
+        st.info("👥 Módulo KPIs em desenvolvimento...")
+        st.write("Em breve: Análise dos KPIs")
+        
+    elif modo_trabalho == "Simulacoes":
+        st.info("👥 Módulo Simulacoes em desenvolvimento...")
+        st.write("Em breve: Análise das Simulacoes")    
 
-
-# ============================================= RODAPÉ =============================================
-
-          
+    # RODAPÉ
     st.markdown("---")
     st.markdown("""
     <div style="text-align: center; color: #666; font-size: 0.8rem;">
@@ -2613,6 +3778,5 @@ def main():
     """.format(datetime.now().strftime("%d/%m/%Y %H:%M")), unsafe_allow_html=True)
 
 # ============================================= EXECUÇÃO =============================================
-
 if __name__ == "__main__":
     main()

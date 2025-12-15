@@ -65,6 +65,23 @@ def inicializar_session_state():
 # Inicializar session_state antes de qualquer widget
 inicializar_session_state()
 
+def load_css():
+    with open("style.css") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+load_css()
+
+
+st.markdown("""
+<style>
+    .stButton > button {
+        width: 100%;
+        border-radius: 10px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+
 # CSS personalizado com cores mais vibrantes nos cards E SCROLLER ANIMADO
 st.markdown("""
 <style>
@@ -462,6 +479,12 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+
+# 4. Verificar ambiente
+if st.secrets.get("IS_CLOUD", False):
+    # Configurações específicas para cloud
+    st.cache_data.clear()
 
 # ============================================= LOCALIDADE =============================================
 def configure_locale() -> None:

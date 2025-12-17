@@ -2524,7 +2524,7 @@ def criar_aba_importacao_com_dados_reais(df_filtrado: pd.DataFrame):
     else:
         st.info("ℹ️ Nenhum dado de portos disponível")
 
-# ============================================= FUNÇÕES PARA PROMOTORES =============================================
+############################################################ ABA PROMOTORES ##################################################################################################        
 
 @st.cache_data(ttl=3600)
 def carregar_dados_MIS():
@@ -2679,6 +2679,8 @@ def criar_tabela_divida_por_linha_negocio(mis_df: pd.DataFrame):
     
     return tabela_completa
 
+
+
 def criar_tabela_top10_promotores(mis_df: pd.DataFrame):
     """Cria tabela Top 10 Promotores com dados de dívida no formato correto"""
     
@@ -2816,7 +2818,6 @@ def criar_aba_divida_promotores():
         colunas_disponiveis = [col for col in colunas_numericas if col in df_linhas_display.columns]
         
         for coluna in colunas_disponiveis:
-            # CORREÇÃO AQUI: df_linhas_display em vez de df_linha_display
             df_linhas_display[coluna] = df_linhas_display[coluna].apply(
                 lambda x: f"MT {formatar_ptbr(x, 0)}" if pd.notna(x) else "MT 0"
             )
@@ -2838,21 +2839,21 @@ def criar_aba_divida_promotores():
         
         df_linhas_display = df_linhas_display.rename(columns=rename_dict)
         
-
-
+        # Destacar linha de Total com cores mais vivas
         def highlight_total(row):
             if row['Linha de Negócio'] == 'Total':
                 return ['background-color: #FF6B35; color: white; font-weight: bold; font-size: 14px'] * len(row)
             return ['background-color: #FFFFFF; color: #333333'] * len(row)
         
-        # Aplicar cores alternadas
+        # Aplicar cores alternadas para linhas
         def color_alternate_rows(row_index):
-            colors = ['#F0F8FF', '#FFFFFF']
+            colors = ['#F0F8FF', '#FFFFFF']  # Azul claro e branco
             return f'background-color: {colors[row_index % 2]}; color: #333333'
         
         # Exibir tabela com cores
         styled_df = df_linhas_display.style.apply(highlight_total, axis=1)
         
+        # Aplicar cores alternadas apenas para linhas não-totais
         for i in range(len(df_linhas_display)):
             if df_linhas_display.iloc[i]['Linha de Negócio'] != 'Total':
                 styled_df = styled_df.apply(
@@ -2866,8 +2867,57 @@ def criar_aba_divida_promotores():
             hide_index=True,
             height=400
         )
+        
+        # Gráfico de barras para dívida por linha de negócio - CORES MAIS VIVAS
+        st.markdown("##### 📊 Visualização - Dívida por Linha de Negócio")
+        
+        dados_grafico_linhas = tabela_linhas[tabela_linhas['LINHA NEG.'] != 'Total']
+        
+        if not dados_grafico_linhas.empty and 'DIVIDA_TOTAL' in dados_grafico_linhas.columns:
+            # Cores vibrantes em gradiente
+            cores_vibrantes = [
+                '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2',
+                '#EF476F', '#FFD166', '#06D6A0', '#073B4C', '#7209B7'
+            ]
+            
+            fig_barras_linhas = px.bar(
+                dados_grafico_linhas.sort_values('DIVIDA_TOTAL', ascending=False),
+                x='LINHA NEG.',
+                y='DIVIDA_TOTAL',
+                title='Dívida Total por Linha de Negócio',
+                color='DIVIDA_TOTAL',
+                color_continuous_scale='Viridis',  # Escala de cores vibrante
+                labels={'DIVIDA_TOTAL': 'Dívida Total (MT)', 'LINHA NEG.': 'Linha de Negócio'},
+                text_auto=True
+            )
+            
+            # Personalizar layout com cores vivas
+            fig_barras_linhas.update_traces(
+                marker_line_color='rgb(8,48,107)',
+                marker_line_width=1.5,
+                opacity=0.9,
+                texttemplate='%{y:,.0f}',
+                textposition='outside'
+            )
+            
+            fig_barras_linhas.update_layout(
+                xaxis_tickangle=-45,
+                plot_bgcolor='rgba(240,248,255,0.8)',
+                paper_bgcolor='rgba(255,255,255,0.9)',
+                font=dict(size=12, color='#333333'),
+                title_font=dict(size=18, color='#2C3E50'),
+                showlegend=True,
+                coloraxis_colorbar=dict(
+                    title="Valor (MT)",
+                    thickness=20,
+                    len=0.5
+                )
+            )
+            
+            st.plotly_chart(fig_barras_linhas, use_container_width=True)
     
     st.markdown("---")
+    
     
     # ========== TABELA TOP 10 PROMOTORES COM DÍVIDA ==========
     st.markdown("#### 📋 Top 10 Promotores - Situação de Dívida")
@@ -2887,10 +2937,12 @@ def criar_aba_divida_promotores():
                 lambda x: f"MT {formatar_ptbr(x, 0)}" if pd.notna(x) and x != 0 else "MT 0"
             )
         
-        # Destacar linha de TOTAL
+        # Destacar linha de TOTAL com cores vivas
         def highlight_top10_total(row):
             if row['Gestor/Promotor'] == 'TOTAL':
                 return ['background-color: #FF6B35; color: white; font-weight: bold; font-size: 14px'] * len(row)
+            
+            # Cores alternadas para linhas normais
             row_idx = row.name if hasattr(row, 'name') else 0
             color = '#F0F8FF' if row_idx % 2 == 0 else '#FFFFFF'
             return [f'background-color: {color}; color: #333333'] * len(row)
@@ -2903,12 +2955,409 @@ def criar_aba_divida_promotores():
             styled_top10,
             use_container_width=True,
             hide_index=True,
-            height=400
+            height=400,
+            column_config={
+                'Gestor/Promotor': st.column_config.TextColumn(
+                    'Gestor/Promotor',
+                    width='medium'
+                ),
+                'Emissor': st.column_config.TextColumn(
+                    'Emissor',
+                    width='small'
+                ),
+                'Nome_do_Cliente': st.column_config.TextColumn(
+                    'Nome do Cliente',
+                    width='large'
+                ),
+                'Dívida Total': st.column_config.TextColumn(
+                    'Dívida Total',
+                    width='medium'
+                ),
+                'Dentro Prazo': st.column_config.TextColumn(
+                    'Dentro Prazo',
+                    width='medium'
+                ),
+                'Previsão 30 Dias': st.column_config.TextColumn(
+                    'Previsão 30 Dias',
+                    width='medium'
+                )
+            }
         )
+        
+        # 2. TABELA RESUMIDA DOS PROMOTORES (SOMENTE PROMOTORES)
+        st.markdown("##### 📊 Resumo por Promotor (Top 10)")
+        
+        # Criar tabela resumida apenas com os totais por promotor
+        tabela_resumo_promotores = []
+        
+        # Obter lista única de promotores (excluindo TOTAL)
+        promotores_unicos = [p for p in df_top10_display['Gestor/Promotor'].unique() 
+                           if p != 'TOTAL' and pd.notna(p)]
+        
+        for promotor in promotores_unicos[:10]:  # Top 10
+            dados_promotor = df_top10_display[df_top10_display['Gestor/Promotor'] == promotor]
+            
+            # Calcular totais (precisamos converter de volta para numérico)
+            def extrair_valor(valor_str):
+                try:
+                    if isinstance(valor_str, (int, float)):
+                        return float(valor_str)
+                    valor_limpo = str(valor_str).replace('MT ', '').replace('.', '').replace(',', '.')
+                    return float(valor_limpo) if valor_limpo.replace('.', '', 1).isdigit() else 0
+                except:
+                    return 0
+            
+            # Somar valores numéricos
+            total_divida = sum(extrair_valor(row['Dívida Total']) for _, row in dados_promotor.iterrows())
+            total_dentro = sum(extrair_valor(row['Dentro Prazo']) for _, row in dados_promotor.iterrows())
+            total_30_dias = sum(extrair_valor(row['Previsão 30 Dias']) for _, row in dados_promotor.iterrows())
+            
+            tabela_resumo_promotores.append({
+                'Promotor': promotor,
+                'Total Dívida': total_divida,
+                'Total Dentro Prazo': total_dentro,
+                'Total Previsão 30 Dias': total_30_dias,
+                'Nº Clientes': len(dados_promotor)
+            })
+        
+        # Criar DataFrame do resumo
+        if tabela_resumo_promotores:
+            df_resumo = pd.DataFrame(tabela_resumo_promotores)
+            df_resumo = df_resumo.sort_values('Total Dívida', ascending=False)
+            
+            # Formatar valores
+            for col in ['Total Dívida', 'Total Dentro Prazo', 'Total Previsão 30 Dias']:
+                if col in df_resumo.columns:
+                    df_resumo[col] = df_resumo[col].apply(
+                        lambda x: f"MT {formatar_ptbr(x, 0)}" if pd.notna(x) else "MT 0"
+                    )
+            
+            # Exibir resumo
+            st.dataframe(
+                df_resumo,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    'Promotor': st.column_config.TextColumn('Promotor', width='large'),
+                    'Total Dívida': st.column_config.TextColumn('Dívida Total', width='medium'),
+                    'Total Dentro Prazo': st.column_config.TextColumn('Dentro Prazo', width='medium'),
+                    'Total Previsão 30 Dias': st.column_config.TextColumn('Previsão 30 Dias', width='medium'),
+                    'Nº Clientes': st.column_config.NumberColumn('Nº Clientes', width='small')
+                }
+            )
+        
+        # 3. GRÁFICO DE BARRAS PARA TOP 10 PROMOTORES
+        st.markdown("##### 📈 Visualização do Top 10 - Dívida Total por Promotor")
+        
+        if tabela_resumo_promotores:
+            # Preparar dados para gráfico
+            df_grafico = pd.DataFrame(tabela_resumo_promotores)
+            
+            # Extrair valores numéricos para o gráfico
+            def extrair_valor_grafico(valor_str):
+                try:
+                    if isinstance(valor_str, (int, float)):
+                        return float(valor_str)
+                    return float(str(valor_str).replace('MT ', '').replace('.', '').replace(',', '.'))
+                except:
+                    return 0
+            
+            # Converter valores formatados de volta para numéricos
+            if 'Total Dívida' in df_grafico.columns:
+                df_grafico['Dívida_Numérica'] = df_grafico['Total Dívida'].apply(extrair_valor_grafico)
+                
+                # Ordenar por dívida
+                df_grafico = df_grafico.sort_values('Dívida_Numérica', ascending=False)
+                
+                # Cores vibrantes
+                cores_vibrantes = [
+                    '#FF0000', '#FF4500', '#FF8C00', '#FFA500', '#FFD700',
+                    '#FF6347', '#FF7F50', '#FFA07A', '#FFB6C1', '#FF69B4'
+                ]
+                
+                fig_barras = px.bar(
+                    df_grafico.head(10),
+                    x='Promotor',
+                    y='Dívida_Numérica',
+                    title='Top 10 Promotores - Dívida Total',
+                    color='Promotor',
+                    color_discrete_sequence=cores_vibrantes[:min(10, len(df_grafico))],
+                    labels={'Dívida_Numérica': 'Dívida Total (MT)', 'Promotor': 'Promotor'},
+                    text='Dívida_Numérica'
+                )
+                
+                fig_barras.update_traces(
+                    texttemplate='MT %{text:,.0f}',
+                    textposition='outside',
+                    marker_line_color='rgb(139,0,0)',
+                    marker_line_width=2,
+                    opacity=0.85
+                )
+                
+                fig_barras.update_layout(
+                    xaxis_tickangle=-45,
+                    plot_bgcolor='rgba(255,250,240,0.8)',
+                    paper_bgcolor='rgba(255,255,255,0.95)',
+                    font=dict(size=12, color='#2C3E50'),
+                    title_font=dict(size=18, color='#8B0000'),
+                    showlegend=False,
+                    yaxis=dict(
+                        title='Dívida Total (MT)',
+                        gridcolor='rgba(128,128,128,0.2)'
+                    )
+                )
+                
+                st.plotly_chart(fig_barras, use_container_width=True)
     
-    st.markdown("---")
+    
+    st.markdown("---") 
+    
+    # ========== ANÁLISE DETALHADA POR PROMOTOR ==========
+    st.markdown("#### 🔍 Análise Detalhada por Promotor - Dívida")
+    
+    if not MIS_df.empty:
+        # Extrair lista de promotores únicos
+        colunas_promotor = [col for col in MIS_df.columns if 'GESTOR' in col or 'PROMOTOR' in col]
+        if colunas_promotor:
+            coluna_promotor_mis = colunas_promotor[0]
+            promotores_unicos = MIS_df[coluna_promotor_mis].dropna().unique()
+            
+            if len(promotores_unicos) > 0:
+                # Container com cor de fundo
+                with st.container():
+                    st.markdown("""
+                    <style>
+                    .promotor-selector {
+                        background-color: #F8F9FA;
+                        padding: 20px;
+                        border-radius: 10px;
+                        border-left: 5px solid #FF6B35;
+                        margin-bottom: 20px;
+                    }
+                    </style>
+                    """, unsafe_allow_html=True)
+                    
+                    col_seletor1, col_seletor2 = st.columns([1, 2])
+                    
+                    with col_seletor1:
+                        promotor_selecionado = st.selectbox(
+                            "👤 Selecione um promotor para análise detalhada:",
+                            options=sorted(promotores_unicos),
+                            key="select_promotor_divida_detalhada"
+                        )
+                    
+                    with col_seletor2:
+                        if promotor_selecionado:
+                            # Informações básicas do promotor
+                            st.info(f"📋 **Promotor selecionado:** {promotor_selecionado}")
+                
+                if promotor_selecionado:
+                    # Filtrar dados do promotor selecionado
+                    dados_promotor_mis = MIS_df[MIS_df[coluna_promotor_mis] == promotor_selecionado]
+                    
+                    if not dados_promotor_mis.empty:
+                        # Container para métricas com cores vivas
+                        st.markdown("""
+                        <style>
+                        .metric-card {
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            border-radius: 10px;
+                            padding: 15px;
+                            color: white;
+                            margin: 5px;
+                        }
+                        </style>
+                        """, unsafe_allow_html=True)
+                        
+                        col_det1, col_det2, col_det3, col_det4 = st.columns(4)
+                        
+                        with col_det1:
+                            divida_total = dados_promotor_mis['DIVIDA_TOTAL'].sum() if 'DIVIDA_TOTAL' in dados_promotor_mis.columns else 0
+                            st.markdown(f"""
+                            <div class="metric-card">
+                                <h3 style="margin:0; color:white;">💰 Dívida Total</h3>
+                                <h1 style="margin:5px 0; color:white;">MT {formatar_ptbr(divida_total, 0)}</h1>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        
+                        with col_det2:
+                            dentro_prazo = dados_promotor_mis['DENTRO_PRAZO'].sum() if 'DENTRO_PRAZO' in dados_promotor_mis.columns else 0
+                            percent_dentro = (dentro_prazo / divida_total * 100) if divida_total > 0 else 0
+                            st.markdown(f"""
+                            <div class="metric-card" style="background: linear-gradient(135deg, #06D6A0 0%, #118AB2 100%);">
+                                <h3 style="margin:0; color:white;">✅ Dentro do Prazo</h3>
+                                <h1 style="margin:5px 0; color:white;">MT {formatar_ptbr(dentro_prazo, 0)}</h1>
+                                <p style="margin:0; color:white;">{percent_dentro:.1f}% do total</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        
+                        with col_det3:
+                            previsao_30 = dados_promotor_mis['PREVISAO_30_DIAS'].sum() if 'PREVISAO_30_DIAS' in dados_promotor_mis.columns else 0
+                            percent_30 = (previsao_30 / divida_total * 100) if divida_total > 0 else 0
+                            st.markdown(f"""
+                            <div class="metric-card" style="background: linear-gradient(135deg, #FF9A00 0%, #FF6B35 100%);">
+                                <h3 style="margin:0; color:white;">⏳ Previsão 30 Dias</h3>
+                                <h1 style="margin:5px 0; color:white;">MT {formatar_ptbr(previsao_30, 0)}</h1>
+                                <p style="margin:0; color:white;">{percent_30:.1f}% do total</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        
+                        with col_det4:
+                            outros_valores = divida_total - dentro_prazo - previsao_30
+                            percent_outros = (outros_valores / divida_total * 100) if divida_total > 0 else 0
+                            st.markdown(f"""
+                            <div class="metric-card" style="background: linear-gradient(135deg, #EF476F 0%, #7209B7 100%);">
+                                <h3 style="margin:0; color:white;">📊 Outros Vencimentos</h3>
+                                <h1 style="margin:5px 0; color:white;">MT {formatar_ptbr(outros_valores, 0)}</h1>
+                                <p style="margin:0; color:white;">{percent_outros:.1f}% do total</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        
+                        # Tabela de clientes do promotor com cores vivas
+                        st.markdown(f"##### 👥 Clientes de {promotor_selecionado}")
+                        
+                        # Criar lista de colunas para exibição
+                        colunas_exibicao = []
+                        
+                        # Procurar coluna de nome do cliente
+                        colunas_cliente = ['NOME_DO_CLIENTE', 'NOME_DO_CITE', 'NOMECLIENTE', 'CLIENTE']
+                        for col_cliente in colunas_cliente:
+                            if col_cliente in dados_promotor_mis.columns:
+                                colunas_exibicao.append(col_cliente)
+                                break
+                        
+                        # Adicionar colunas numéricas
+                        for col in ['DIVIDA_TOTAL', 'DENTRO_PRAZO', 'PREVISAO_30_DIAS']:
+                            if col in dados_promotor_mis.columns:
+                                colunas_exibicao.append(col)
+                        
+                        if colunas_exibicao:
+                            clientes_promotor = dados_promotor_mis[colunas_exibicao].copy()
+                            
+                            # Renomear colunas para exibição
+                            rename_dict_clientes = {
+                                'NOME_DO_CLIENTE': 'Nome do Cliente',
+                                'NOME_DO_CITE': 'Nome do Cliente',
+                                'NOMECLIENTE': 'Nome do Cliente',
+                                'CLIENTE': 'Nome do Cliente',
+                                'DIVIDA_TOTAL': 'Dívida Total',
+                                'DENTRO_PRAZO': 'Dentro Prazo',
+                                'PREVISAO_30_DIAS': 'Previsão 30 Dias'
+                            }
+                            clientes_promotor = clientes_promotor.rename(columns=rename_dict_clientes)
+                            
+                            # Ordenar por dívida total
+                            if 'Dívida Total' in clientes_promotor.columns:
+                                clientes_promotor = clientes_promotor.sort_values('Dívida Total', ascending=False)
+                            
+                            # Formatar valores monetários
+                            for col in ['Dívida Total', 'Dentro Prazo', 'Previsão 30 Dias']:
+                                if col in clientes_promotor.columns:
+                                    clientes_promotor[col] = clientes_promotor[col].apply(
+                                        lambda x: f"MT {formatar_ptbr(x, 0)}" if pd.notna(x) else "MT 0"
+                                    )
+                            
+                            # Estilizar a tabela com cores vivas
+                            def highlight_clientes(row):
+                                # Destacar os 3 maiores valores
+                                try:
+                                    valor_str = row['Dívida Total'].replace('MT ', '').replace('.', '').replace(',', '.')
+                                    valor = float(valor_str) if valor_str.replace('.', '', 1).isdigit() else 0
+                                    
+                                    if valor > 0 and row.name < 3:  # Primeiros 3 lugares
+                                        return ['background-color: #FFD700; color: #333333; font-weight: bold'] * len(row)
+                                    elif valor == 0:
+                                        return ['background-color: #90EE90; color: #333333'] * len(row)
+                                except:
+                                    pass
+                                return [''] * len(row)
+                            
+                            styled_clientes = clientes_promotor.style.apply(highlight_clientes, axis=1)
+                            
+                            # Aplicar cores alternadas
+                            def color_clientes_rows(df):
+                                """Aplica cores alternadas de forma segura"""
+                                if df.empty:
+                                  return pd.DataFrame('', index=df.index, columns=df.columns)
+    
+                                styles = pd.DataFrame('', index=df.index, columns=df.columns)
+    
+                                try:
+                                  for i in range(len(df)):
+                                      color = '#E8F4FD' if i % 2 == 0 else '#FFFFFF'
+            
+                                      # Aplicar a todas as colunas
+                                      for col in df.columns:
+                                          styles.iloc[i, df.columns.get_loc(col)] = f'background-color: {color}; color: #333333'
+                                except Exception as e:
+                                  # Em caso de erro, retornar sem estilo
+                                  print(f"Erro na aplicação de cores: {e}")
+    
+                                return styles
+                            
+                            for i in range(len(clientes_promotor)):
+                                styled_clientes = styled_clientes.apply(
+                                    lambda x: [color_clientes_rows(i) for _ in x], 
+                                    subset=pd.IndexSlice[i:i], axis=0
+                                )
+                
+                            try:
+                                st.dataframe(styled_clientes, use_container_width=True, height=300)
+                            except Exception as e:
+                               # Exibir dados sem formatação em caso de erro
+                                st.warning(f"⚠️ Erro na formatação: {str(e)[:100]}...")
+                                st.dataframe(clientes_promotor, use_container_width=True, height=300)
+                            
+                            # Gráfico de pizza para distribuição da dívida por cliente
+                            if 'Dívida Total' in clientes_promotor.columns:
+                                st.markdown(f"##### 📈 Distribuição da Dívida - {promotor_selecionado}")
+                                
+                                # Extrair valores numéricos para o gráfico
+                                valores = []
+                                for val in clientes_promotor['Dívida Total'].head(10):  # Top 10 clientes
+                                    try:
+                                        valor_str = val.replace('MT ', '').replace('.', '').replace(',', '.')
+                                        valor = float(valor_str) if valor_str.replace('.', '', 1).isdigit() else 0
+                                        valores.append(valor)
+                                    except:
+                                        valores.append(0)
+                                
+                                nomes = clientes_promotor['Nome do Cliente'].head(10).tolist()
+                                
+                                if valores and any(v > 0 for v in valores):
+                                    # Cores vibrantes para o gráfico de pizza
+                                    cores_pizza = [
+                                        '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF',
+                                        '#00FFFF', '#FFA500', '#800080', '#008000', '#000080'
+                                    ]
+                                    
+                                    fig_pizza = px.pie(
+                                        names=nomes,
+                                        values=valores,
+                                        title=f'Distribuição da Dívida - {promotor_selecionado}',
+                                        color_discrete_sequence=cores_pizza
+                                    )
+                                    
+                                    fig_pizza.update_traces(
+                                        textposition='inside',
+                                        textinfo='percent+label',
+                                        marker=dict(line=dict(color='#FFFFFF', width=2))
+                                    )
+                                    
+                                    fig_pizza.update_layout(
+                                        showlegend=True,
+                                        legend=dict(
+                                            font=dict(size=12, color='#333333'),
+                                            bgcolor='rgba(255,255,255,0.8)',
+                                            bordercolor='#333333',
+                                            borderwidth=1
+                                        )
+                                    )
+                                    
+                                    st.plotly_chart(fig_pizza, use_container_width=True)
     
     # ========== DOWNLOAD DE DADOS ==========
+    st.markdown("---")
     st.markdown("#### 📥 Download dos Dados de Dívida")
     
     with st.expander("📊 Opções de Exportação"):
@@ -2931,12 +3380,31 @@ def criar_aba_divida_promotores():
                 )
         
         with col_dl3:
-            if 'MIS_df' in locals() and not MIS_df.empty:
+            # Adicionar botão para download de dados detalhados do promotor selecionado
+            if 'dados_promotor_mis' in locals() and not dados_promotor_mis.empty:
                 criar_botao_download_excel(
-                    MIS_df,
-                    "dados_completos_MIS",
-                    "Dados Completos do MIS"
+                    dados_promotor_mis,
+                    f"detalhes_divida_{promotor_selecionado.replace(' ', '_')}",
+                    f"Detalhes da Dívida - {promotor_selecionado}"
                 )
+
+                
+
+def criar_aba_promotores(df_filtrado: pd.DataFrame):
+    """Cria a aba de Análise de Promotores com dados de DateSet_MT_Pln"""
+    
+    st.markdown('<div class="section-title">👥 Análise de Promotores - Desempenho Comercial</div>', unsafe_allow_html=True)
+    
+    # Criar tabs para separar análise de vendas e dívida
+    tab_vendas, tab_divida = st.tabs(["📈 Análise de Vendas", "💰 Análise de Dívida"])
+    
+    with tab_vendas:
+        criar_aba_vendas_promotores(df_filtrado)
+    
+    with tab_divida:
+        criar_aba_divida_promotores()
+
+
 
 def criar_aba_vendas_promotores(df_filtrado: pd.DataFrame):
     """Cria a parte de análise de vendas dos promotores"""
@@ -2963,8 +3431,11 @@ def criar_aba_vendas_promotores(df_filtrado: pd.DataFrame):
     
     if not coluna_promotor:
         st.error("❌ Não foi possível encontrar coluna de promotor/gestor nos dados de vendas")
+        # Mostrar colunas disponíveis para debugging
+        st.write("Colunas disponíveis no DataFrame:", list(df_filtrado.columns))
         return
     
+
     # ========== CARTÕES DE MÉTRICAS GERAIS ==========
     st.markdown("#### 🎯 Visão Geral dos Promotores - Vendas")
     
@@ -3161,10 +3632,15 @@ def criar_aba_vendas_promotores(df_filtrado: pd.DataFrame):
         
     except Exception as e:
         st.error(f"❌ Erro ao criar tabela de desempenho: {str(e)}")
+        st.write("DataFrame columns:", list(df_filtrado.columns))
+        st.write("coluna_promotor:", coluna_promotor)
         return
     
-    st.markdown("---")
+
     
+    st.markdown("---")
+
+
     # ========== DOWNLOAD DE DADOS ==========
     st.markdown("#### 📥 Download dos Dados de Vendas")
     
@@ -3203,22 +3679,6 @@ def criar_aba_vendas_promotores(df_filtrado: pd.DataFrame):
                 )
     except Exception as e:
         st.warning(f"⚠️ Erro nas opções de download: {str(e)}")
-
-def criar_aba_promotores(df_filtrado: pd.DataFrame):
-    """Cria a aba de Análise de Promotores com dados de DateSet_MT_Pln"""
-    
-    st.markdown('<div class="section-title">👥 Análise de Promotores - Desempenho Comercial</div>', unsafe_allow_html=True)
-    
-    # Criar tabs para separar análise de vendas e dívida
-    tab_vendas, tab_divida = st.tabs(["📈 Análise de Vendas", "💰 Análise de Dívida"])
-    
-    with tab_vendas:
-        criar_aba_vendas_promotores(df_filtrado)
-    
-    with tab_divida:
-        criar_aba_divida_promotores()
-
-
 
 
 

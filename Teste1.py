@@ -9,6 +9,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import locale
 import os
 import base64
@@ -62,12 +64,24 @@ def inicializar_session_state():
         if key not in st.session_state:
             st.session_state[key] = value
 
-# Inicializar session_state antes de qualquer widget
+# Inicializar session_state ANTES de qualquer widget
 inicializar_session_state()
 
-# CSS personalizado com cores mais vibrantes nos cards E SCROLLER ANIMADO
+# REMOVER A CHAMADA AO ARQUIVO CSS EXTERNO (que pode não existir)
+# def load_css():
+#     with open("style.css") as f:
+#         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+# load_css()
+
+# CSS personalizado completo dentro do código
 st.markdown("""
 <style>
+    .stButton > button {
+        width: 100%;
+        border-radius: 10px;
+    }
+    
     .main {
         background-color: #FFFFFF;
         color: #333333;
@@ -461,7 +475,20 @@ st.markdown("""
         }
     }
 </style>
+            
 """, unsafe_allow_html=True)
+
+# ============================================= VERIFICAÇÃO DE AMBIENTE =============================================
+# Verificação segura de ambiente (sem causar erro se secrets não existir)
+try:
+    # Tentar verificar se é ambiente cloud
+    if hasattr(st, 'secrets') and st.secrets.get("IS_CLOUD", False):
+        # Configurações específicas para cloud
+        st.cache_data.clear()
+        logger.info("Modo cloud detectado - cache limpo")
+except Exception as e:
+    # Se houver erro com secrets, apenas continue
+    logger.info(f"Modo local - secrets não configurado: {e}")
 
 # ============================================= LOCALIDADE =============================================
 def configure_locale() -> None:
@@ -1219,7 +1246,7 @@ def criar_grafico_linhas_vendas_plano(df_filtrado: pd.DataFrame):
         dados_mensais = df_grafico.groupby(['Ano', 'Mes']).agg({
             coluna_vendas: 'sum',
             coluna_plano: 'sum'
-        }).resetindex()
+        }).reset_index()
         
         # Renomear colunas para padrão
         dados_mensais = dados_mensais.rename(columns={
@@ -1858,7 +1885,7 @@ def extrair_dados_portos_RELEASE_fh(df_importacao: pd.DataFrame) -> pd.DataFrame
         dados_portos = df_importacao.groupby(coluna_porto).agg({
             coluna_RELEASE: 'sum',
             coluna_fh: 'sum'
-        }).reset_index()
+        }).reset_index()  # CORREÇÃO AQUI: reset_index() com underscore
         
         dados_portos = dados_portos.rename(columns={
             coluna_porto: 'Porto',
@@ -1871,7 +1898,7 @@ def extrair_dados_portos_RELEASE_fh(df_importacao: pd.DataFrame) -> pd.DataFrame
         dados_portos = df_importacao.groupby(coluna_porto).agg({
             'Qtd_Petro_TM': 'sum',
             'Qtd_FH_( TM)': 'sum'
-        }).reset_index()
+        }).reset_index()  # CORREÇÃO AQUI: reset_index() com underscore
         
         dados_portos = dados_portos.rename(columns={
             coluna_porto: 'Porto',
@@ -1916,7 +1943,8 @@ def extrair_dados_portos_RELEASE_fh(df_importacao: pd.DataFrame) -> pd.DataFrame
             'FINANCIAL HOLD': 'sum'
         })
     
-    # CORREÇÃO: GARANTIR QUE TODOS OS PORTOS DA ORDEM FIXA ESTEJAM PRESENTES (MESMO COM ZERO)
+
+
     portos_existentes = dados_portos['Porto'].unique() if not dados_portos.empty else []
     
     for porto in ORDEM_PORTOS:
@@ -2496,8 +2524,7 @@ def criar_aba_importacao_com_dados_reais(df_filtrado: pd.DataFrame):
     else:
         st.info("ℹ️ Nenhum dado de portos disponível")
 
-
-############################################################ ABA PROMOTORES ##################################################################################################        
+# ============================================= FUNÇÕES PARA PROMOTORES =============================================
 
 @st.cache_data(ttl=3600)
 def carregar_dados_MIS():
@@ -2652,8 +2679,6 @@ def criar_tabela_divida_por_linha_negocio(mis_df: pd.DataFrame):
     
     return tabela_completa
 
-
-
 def criar_tabela_top10_promotores(mis_df: pd.DataFrame):
     """Cria tabela Top 10 Promotores com dados de dívida no formato correto"""
     
@@ -2791,6 +2816,7 @@ def criar_aba_divida_promotores():
         colunas_disponiveis = [col for col in colunas_numericas if col in df_linhas_display.columns]
         
         for coluna in colunas_disponiveis:
+            # CORREÇÃO AQUI: df_linhas_display em vez de df_linha_display
             df_linhas_display[coluna] = df_linhas_display[coluna].apply(
                 lambda x: f"MT {formatar_ptbr(x, 0)}" if pd.notna(x) else "MT 0"
             )
@@ -2812,21 +2838,21 @@ def criar_aba_divida_promotores():
         
         df_linhas_display = df_linhas_display.rename(columns=rename_dict)
         
-        # Destacar linha de Total com cores mais vivas
+
+
         def highlight_total(row):
             if row['Linha de Negócio'] == 'Total':
                 return ['background-color: #FF6B35; color: white; font-weight: bold; font-size: 14px'] * len(row)
             return ['background-color: #FFFFFF; color: #333333'] * len(row)
         
-        # Aplicar cores alternadas para linhas
+        # Aplicar cores alternadas
         def color_alternate_rows(row_index):
-            colors = ['#F0F8FF', '#FFFFFF']  # Azul claro e branco
+            colors = ['#F0F8FF', '#FFFFFF']
             return f'background-color: {colors[row_index % 2]}; color: #333333'
         
         # Exibir tabela com cores
         styled_df = df_linhas_display.style.apply(highlight_total, axis=1)
         
-        # Aplicar cores alternadas apenas para linhas não-totais
         for i in range(len(df_linhas_display)):
             if df_linhas_display.iloc[i]['Linha de Negócio'] != 'Total':
                 styled_df = styled_df.apply(
@@ -2840,57 +2866,8 @@ def criar_aba_divida_promotores():
             hide_index=True,
             height=400
         )
-        
-        # Gráfico de barras para dívida por linha de negócio - CORES MAIS VIVAS
-        st.markdown("##### 📊 Visualização - Dívida por Linha de Negócio")
-        
-        dados_grafico_linhas = tabela_linhas[tabela_linhas['LINHA NEG.'] != 'Total']
-        
-        if not dados_grafico_linhas.empty and 'DIVIDA_TOTAL' in dados_grafico_linhas.columns:
-            # Cores vibrantes em gradiente
-            cores_vibrantes = [
-                '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2',
-                '#EF476F', '#FFD166', '#06D6A0', '#073B4C', '#7209B7'
-            ]
-            
-            fig_barras_linhas = px.bar(
-                dados_grafico_linhas.sort_values('DIVIDA_TOTAL', ascending=False),
-                x='LINHA NEG.',
-                y='DIVIDA_TOTAL',
-                title='Dívida Total por Linha de Negócio',
-                color='DIVIDA_TOTAL',
-                color_continuous_scale='Viridis',  # Escala de cores vibrante
-                labels={'DIVIDA_TOTAL': 'Dívida Total (MT)', 'LINHA NEG.': 'Linha de Negócio'},
-                text_auto=True
-            )
-            
-            # Personalizar layout com cores vivas
-            fig_barras_linhas.update_traces(
-                marker_line_color='rgb(8,48,107)',
-                marker_line_width=1.5,
-                opacity=0.9,
-                texttemplate='%{y:,.0f}',
-                textposition='outside'
-            )
-            
-            fig_barras_linhas.update_layout(
-                xaxis_tickangle=-45,
-                plot_bgcolor='rgba(240,248,255,0.8)',
-                paper_bgcolor='rgba(255,255,255,0.9)',
-                font=dict(size=12, color='#333333'),
-                title_font=dict(size=18, color='#2C3E50'),
-                showlegend=True,
-                coloraxis_colorbar=dict(
-                    title="Valor (MT)",
-                    thickness=20,
-                    len=0.5
-                )
-            )
-            
-            st.plotly_chart(fig_barras_linhas, use_container_width=True)
     
     st.markdown("---")
-    
     
     # ========== TABELA TOP 10 PROMOTORES COM DÍVIDA ==========
     st.markdown("#### 📋 Top 10 Promotores - Situação de Dívida")
@@ -2910,12 +2887,10 @@ def criar_aba_divida_promotores():
                 lambda x: f"MT {formatar_ptbr(x, 0)}" if pd.notna(x) and x != 0 else "MT 0"
             )
         
-        # Destacar linha de TOTAL com cores vivas
+        # Destacar linha de TOTAL
         def highlight_top10_total(row):
             if row['Gestor/Promotor'] == 'TOTAL':
                 return ['background-color: #FF6B35; color: white; font-weight: bold; font-size: 14px'] * len(row)
-            
-            # Cores alternadas para linhas normais
             row_idx = row.name if hasattr(row, 'name') else 0
             color = '#F0F8FF' if row_idx % 2 == 0 else '#FFFFFF'
             return [f'background-color: {color}; color: #333333'] * len(row)
@@ -2928,299 +2903,12 @@ def criar_aba_divida_promotores():
             styled_top10,
             use_container_width=True,
             hide_index=True,
-            height=400,
-            column_config={
-                'Gestor/Promotor': st.column_config.TextColumn(
-                    'Gestor/Promotor',
-                    width='medium'
-                ),
-                'Emissor': st.column_config.TextColumn(
-                    'Emissor',
-                    width='small'
-                ),
-                'Nome_do_Cliente': st.column_config.TextColumn(
-                    'Nome do Cliente',
-                    width='large'
-                ),
-                'Dívida Total': st.column_config.TextColumn(
-                    'Dívida Total',
-                    width='medium'
-                ),
-                'Dentro Prazo': st.column_config.TextColumn(
-                    'Dentro Prazo',
-                    width='medium'
-                ),
-                'Previsão 30 Dias': st.column_config.TextColumn(
-                    'Previsão 30 Dias',
-                    width='medium'
-                )
-            }
+            height=400
         )
-        
-        # 2. TABELA RESUMIDA DOS PROMOTORES (SOMENTE PROMOTORES)
-        st.markdown("##### 📊 Resumo por Promotor (Top 10)")
-        
-        # Criar tabela resumida apenas com os totais por promotor
-        tabela_resumo_promotores = []
-        
-        # Obter lista única de promotores (excluindo TOTAL)
-        promotores_unicos = [p for p in df_top10_display['Gestor/Promotor'].unique() 
-                           if p != 'TOTAL' and pd.notna(p)]
-        
-        for promotor in promotores_unicos[:10]:  # Top 10
-            dados_promotor = df_top10_display[df_top10_display['Gestor/Promotor'] == promotor]
-            
-            # Calcular totais (precisamos converter de volta para numérico)
-            def extrair_valor(valor_str):
-                try:
-                    if isinstance(valor_str, (int, float)):
-                        return float(valor_str)
-                    valor_limpo = str(valor_str).replace('MT ', '').replace('.', '').replace(',', '.')
-                    return float(valor_limpo) if valor_limpo.replace('.', '', 1).isdigit() else 0
-                except:
-                    return 0
-            
-            # Somar valores numéricos
-            total_divida = sum(extrair_valor(row['Dívida Total']) for _, row in dados_promotor.iterrows())
-            total_dentro = sum(extrair_valor(row['Dentro Prazo']) for _, row in dados_promotor.iterrows())
-            total_30_dias = sum(extrair_valor(row['Previsão 30 Dias']) for _, row in dados_promotor.iterrows())
-            
-            tabela_resumo_promotores.append({
-                'Promotor': promotor,
-                'Total Dívida': total_divida,
-                'Total Dentro Prazo': total_dentro,
-                'Total Previsão 30 Dias': total_30_dias,
-                'Nº Clientes': len(dados_promotor)
-            })
-        
-        # Criar DataFrame do resumo
-        if tabela_resumo_promotores:
-            df_resumo = pd.DataFrame(tabela_resumo_promotores)
-            df_resumo = df_resumo.sort_values('Total Dívida', ascending=False)
-            
-            # Formatar valores
-            for col in ['Total Dívida', 'Total Dentro Prazo', 'Total Previsão 30 Dias']:
-                if col in df_resumo.columns:
-                    df_resumo[col] = df_resumo[col].apply(
-                        lambda x: f"MT {formatar_ptbr(x, 0)}" if pd.notna(x) else "MT 0"
-                    )
-            
-            # Exibir resumo
-            st.dataframe(
-                df_resumo,
-                use_container_width=True,
-                hide_index=True,
-                column_config={
-                    'Promotor': st.column_config.TextColumn('Promotor', width='large'),
-                    'Total Dívida': st.column_config.TextColumn('Dívida Total', width='medium'),
-                    'Total Dentro Prazo': st.column_config.TextColumn('Dentro Prazo', width='medium'),
-                    'Total Previsão 30 Dias': st.column_config.TextColumn('Previsão 30 Dias', width='medium'),
-                    'Nº Clientes': st.column_config.NumberColumn('Nº Clientes', width='small')
-                }
-            )
-        
-        # 3. GRÁFICO DE BARRAS PARA TOP 10 PROMOTORES
-        st.markdown("##### 📈 Visualização do Top 10 - Dívida Total por Promotor")
-        
-        if tabela_resumo_promotores:
-            # Preparar dados para gráfico
-            df_grafico = pd.DataFrame(tabela_resumo_promotores)
-            
-            # Extrair valores numéricos para o gráfico
-            def extrair_valor_grafico(valor_str):
-                try:
-                    if isinstance(valor_str, (int, float)):
-                        return float(valor_str)
-                    return float(str(valor_str).replace('MT ', '').replace('.', '').replace(',', '.'))
-                except:
-                    return 0
-            
-            # Converter valores formatados de volta para numéricos
-            if 'Total Dívida' in df_grafico.columns:
-                df_grafico['Dívida_Numérica'] = df_grafico['Total Dívida'].apply(extrair_valor_grafico)
-                
-                # Ordenar por dívida
-                df_grafico = df_grafico.sort_values('Dívida_Numérica', ascending=False)
-                
-                # Cores vibrantes
-                cores_vibrantes = [
-                    '#FF0000', '#FF4500', '#FF8C00', '#FFA500', '#FFD700',
-                    '#FF6347', '#FF7F50', '#FFA07A', '#FFB6C1', '#FF69B4'
-                ]
-                
-                fig_barras = px.bar(
-                    df_grafico.head(10),
-                    x='Promotor',
-                    y='Dívida_Numérica',
-                    title='Top 10 Promotores - Dívida Total',
-                    color='Promotor',
-                    color_discrete_sequence=cores_vibrantes[:min(10, len(df_grafico))],
-                    labels={'Dívida_Numérica': 'Dívida Total (MT)', 'Promotor': 'Promotor'},
-                    text='Dívida_Numérica'
-                )
-                
-                fig_barras.update_traces(
-                    texttemplate='MT %{text:,.0f}',
-                    textposition='outside',
-                    marker_line_color='rgb(139,0,0)',
-                    marker_line_width=2,
-                    opacity=0.85
-                )
-                
-                fig_barras.update_layout(
-                    xaxis_tickangle=-45,
-                    plot_bgcolor='rgba(255,250,240,0.8)',
-                    paper_bgcolor='rgba(255,255,255,0.95)',
-                    font=dict(size=12, color='#2C3E50'),
-                    title_font=dict(size=18, color='#8B0000'),
-                    showlegend=False,
-                    yaxis=dict(
-                        title='Dívida Total (MT)',
-                        gridcolor='rgba(128,128,128,0.2)'
-                    )
-                )
-                
-                st.plotly_chart(fig_barras, use_container_width=True)
-    
     
     st.markdown("---")
     
-    # ========== ANÁLISE DETALHADA POR PROMOTOR ==========
-
-    st.markdown("#### 🔍 Análise Detalhada por Promotor - Dívida")
-
-    if not MIS_df.empty:
-        # Extrair lista de promotores únicos
-        colunas_promotor = [col for col in MIS_df.columns if 'GESTOR' in col or 'PROMOTOR' in col]
-        if colunas_promotor:
-            coluna_promotor_mis = colunas_promotor[0]
-            promotores_unicos = MIS_df[coluna_promotor_mis].dropna().unique()
-        
-        if len(promotores_unicos) > 0:
-            # Container com cor de fundo
-            with st.container():
-                st.markdown("""
-                <style>
-                .promotor-selector {
-                    background-color: #F8F9FA;
-                    padding: 20px;
-                    border-radius: 10px;
-                    border-left: 5px solid #FF6B35;
-                    margin-bottom: 20px;
-                }
-                
-                /* ESTILOS PARA CARTÕES MAIORES */
-                .metric-card-large {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    border-radius: 15px;
-                    padding: 25px 15px;
-                    color: white;
-                    margin: 10px 5px;
-                    min-height: 160px;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                    transition: transform 0.3s ease;
-                }
-                
-                .metric-card-large:hover {
-                    transform: translateY(-5px);
-                    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
-                }
-                
-                .metric-card-large h3 {
-                    margin: 0 0 10px 0;
-                    color: white;
-                    font-size: 18px;
-                    font-weight: 600;
-                    text-align: center;
-                }
-                
-                .metric-card-large h1 {
-                    margin: 10px 0;
-                    color: white;
-                    font-size: 28px;
-                    font-weight: 700;
-                    text-align: center;
-                }
-                
-                .metric-card-large p {
-                    margin: 5px 0 0 0;
-                    color: rgba(255,255,255,0.9);
-                    font-size: 14px;
-                    text-align: center;
-                }
-                </style>
-                """, unsafe_allow_html=True)
-                
-                col_seletor1, col_seletor2 = st.columns([1, 2])
-                
-                with col_seletor1:
-                    promotor_selecionado = st.selectbox(
-                        "👤 Selecione um promotor para análise detalhada:",
-                        options=sorted(promotores_unicos),
-                        key="select_promotor_divida_detalhada"
-                    )
-                
-                with col_seletor2:
-                    if promotor_selecionado:
-                        # Informações básicas do promotor
-                        st.info(f"📋 **Promotor selecionado:** {promotor_selecionado}")
-            
-            if promotor_selecionado:
-                # Filtrar dados do promotor selecionado
-                dados_promotor_mis = MIS_df[MIS_df[coluna_promotor_mis] == promotor_selecionado]
-                
-                if not dados_promotor_mis.empty:
-                    # Usar colunas com largura igual para cartões maiores
-                    col_det1, col_det2, col_det3, col_det4 = st.columns(4)
-                    
-                    with col_det1:
-                        divida_total = dados_promotor_mis['DIVIDA_TOTAL'].sum() if 'DIVIDA_TOTAL' in dados_promotor_mis.columns else 0
-                        st.markdown(f"""
-                        <div class="metric-card-large">
-                            <h3>💰 DÍVIDA TOTAL</h3>
-                            <h1>MT {formatar_ptbr(divida_total, 0)}</h1>
-                            <p>Valor acumulado</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col_det2:
-                        dentro_prazo = dados_promotor_mis['DENTRO_PRAZO'].sum() if 'DENTRO_PRAZO' in dados_promotor_mis.columns else 0
-                        percent_dentro = (dentro_prazo / divida_total * 100) if divida_total > 0 else 0
-                        st.markdown(f"""
-                        <div class="metric-card-large" style="background: linear-gradient(135deg, #06D6A0 0%, #118AB2 100%);">
-                            <h3>✅ DENTRO DO PRAZO</h3>
-                            <h1>MT {formatar_ptbr(dentro_prazo, 0)}</h1>
-                            <p>{percent_dentro:.1f}% do total</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col_det3:
-                        previsao_30 = dados_promotor_mis['PREVISAO_30_DIAS'].sum() if 'PREVISAO_30_DIAS' in dados_promotor_mis.columns else 0
-                        percent_30 = (previsao_30 / divida_total * 100) if divida_total > 0 else 0
-                        st.markdown(f"""
-                        <div class="metric-card-large" style="background: linear-gradient(135deg, #FF9A00 0%, #FF6B35 100%);">
-                            <h3>⏳ PREVISÃO 30 DIAS</h3>
-                            <h1>MT {formatar_ptbr(previsao_30, 0)}</h1>
-                            <p>{percent_30:.1f}% do total</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col_det4:
-                        outros_valores = divida_total - dentro_prazo - previsao_30
-                        percent_outros = (outros_valores / divida_total * 100) if divida_total > 0 else 0
-                        st.markdown(f"""
-                        <div class="metric-card-large" style="background: linear-gradient(135deg, #EF476F 0%, #7209B7 100%);">
-                            <h3>📊 OUTROS VENCIMENTOS</h3>
-                            <h1>MT {formatar_ptbr(outros_valores, 0)}</h1>
-                            <p>{percent_outros:.1f}% do total</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-
     # ========== DOWNLOAD DE DADOS ==========
-    st.markdown("---")
     st.markdown("#### 📥 Download dos Dados de Dívida")
     
     with st.expander("📊 Opções de Exportação"):
@@ -3243,31 +2931,12 @@ def criar_aba_divida_promotores():
                 )
         
         with col_dl3:
-            # Adicionar botão para download de dados detalhados do promotor selecionado
-            if 'dados_promotor_mis' in locals() and not dados_promotor_mis.empty:
+            if 'MIS_df' in locals() and not MIS_df.empty:
                 criar_botao_download_excel(
-                    dados_promotor_mis,
-                    f"detalhes_divida_{promotor_selecionado.replace(' ', '_')}",
-                    f"Detalhes da Dívida - {promotor_selecionado}"
+                    MIS_df,
+                    "dados_completos_MIS",
+                    "Dados Completos do MIS"
                 )
-
-                
-
-def criar_aba_promotores(df_filtrado: pd.DataFrame):
-    """Cria a aba de Análise de Promotores com dados de DateSet_MT_Pln"""
-    
-    st.markdown('<div class="section-title">👥 Análise de Promotores - Desempenho Comercial</div>', unsafe_allow_html=True)
-    
-    # Criar tabs para separar análise de vendas e dívida
-    tab_vendas, tab_divida = st.tabs(["📈 Análise de Vendas", "💰 Análise de Dívida"])
-    
-    with tab_vendas:
-        criar_aba_vendas_promotores(df_filtrado)
-    
-    with tab_divida:
-        criar_aba_divida_promotores()
-
-
 
 def criar_aba_vendas_promotores(df_filtrado: pd.DataFrame):
     """Cria a parte de análise de vendas dos promotores"""
@@ -3294,8 +2963,6 @@ def criar_aba_vendas_promotores(df_filtrado: pd.DataFrame):
     
     if not coluna_promotor:
         st.error("❌ Não foi possível encontrar coluna de promotor/gestor nos dados de vendas")
-        # Mostrar colunas disponíveis para debugging
-        st.write("Colunas disponíveis no DataFrame:", list(df_filtrado.columns))
         return
     
     # ========== CARTÕES DE MÉTRICAS GERAIS ==========
@@ -3494,11 +3161,7 @@ def criar_aba_vendas_promotores(df_filtrado: pd.DataFrame):
         
     except Exception as e:
         st.error(f"❌ Erro ao criar tabela de desempenho: {str(e)}")
-        st.write("DataFrame columns:", list(df_filtrado.columns))
-        st.write("coluna_promotor:", coluna_promotor)
         return
-    
-
     
     st.markdown("---")
     
@@ -3540,7 +3203,785 @@ def criar_aba_vendas_promotores(df_filtrado: pd.DataFrame):
                 )
     except Exception as e:
         st.warning(f"⚠️ Erro nas opções de download: {str(e)}")
+
+def criar_aba_promotores(df_filtrado: pd.DataFrame):
+    """Cria a aba de Análise de Promotores com dados de DateSet_MT_Pln"""
     
+    st.markdown('<div class="section-title">👥 Análise de Promotores - Desempenho Comercial</div>', unsafe_allow_html=True)
+    
+    # Criar tabs para separar análise de vendas e dívida
+    tab_vendas, tab_divida = st.tabs(["📈 Análise de Vendas", "💰 Análise de Dívida"])
+    
+    with tab_vendas:
+        criar_aba_vendas_promotores(df_filtrado)
+    
+    with tab_divida:
+        criar_aba_divida_promotores()
+
+
+
+
+
+# ============================================= CACHE DOS DADOS =============================================
+@st.cache_data(ttl=3600)
+def carregar_vendas() -> pd.DataFrame:
+    """Carrega dados de vendas com verificação robusta"""
+    try:
+        arquivos_vendas = [
+            'Vds_2023_Comb_.xlsx',
+            'Vds_2024_Comb_.xlsx',
+            'Vds_2025_Comb_.xlsx'
+        ]
+        
+        dfs = []
+        for arquivo in arquivos_vendas:
+            if os.path.exists(arquivo):
+                df_temp = pd.read_excel(arquivo)
+                logger.info(f"Arquivo {arquivo} carregado: {len(df_temp)} registros")
+                dfs.append(df_temp)
+            else:
+                logger.warning(f"Arquivo {arquivo} não encontrado")
+                st.warning(f"⚠️ Arquivo {arquivo} não encontrado")
+        
+        if not dfs:
+            st.error("❌ Nenhum arquivo de vendas encontrado")
+            return pd.DataFrame()
+            
+        df = pd.concat(dfs, ignore_index=True).fillna(0)
+        
+        # Processamento das colunas monetárias
+        colunas_monetarias = ['V_Liquido', 'V_Imposto', 'Custo_Produto', 'Margem_Vendas',
+                             'V_Venda_Oceanica', 'Desconto', 'Valor_ISC']
+        
+        for col in colunas_monetarias:
+            if col in df.columns:
+                df[f'{col}_MT'] = df[col] * df['Cambio']
+                df[f'{col}_USD'] = df[col] / df['Cambio']
+
+        # Processamento de datas
+        df['Data_Facturacao'] = pd.to_datetime(df['Data_Facturacao'], errors='coerce')
+        df['Ano'] = df['Data_Facturacao'].dt.year.fillna(0).astype(int)
+        df['Mes'] = df['Data_Facturacao'].dt.month.fillna(0).astype(int)
+        
+        logger.info(f"Dataset de vendas processado: {len(df)} registros")
+        return df
+        
+    except Exception as e:
+        logger.error(f"Erro ao carregar vendas: {str(e)}")
+        st.error(f"❌ Erro crítico ao carregar vendas: {str(e)}")
+        return pd.DataFrame()
+
+@st.cache_data(ttl=3600)
+def carregar_plano() -> pd.DataFrame:
+    try:
+        p1 = pd.read_excel('PlanComb_2023.xlsx')
+        p2 = pd.read_excel('PlanComb_2024.xlsx')
+        p3 = pd.read_excel('PlanComb_2025.xlsx')
+
+        df = pd.concat([p1, p2, p3], ignore_index=True).fillna(0)
+        df['Data_Facturacao'] = pd.to_datetime(df['Data_Facturacao'], format='%d/%m/%Y', errors='coerce')
+        
+        return df
+    except Exception as e:
+        logger.error(f"Erro ao carregar plano: {str(e)}")
+        st.error(f"Erro ao carregar plano: {str(e)}")
+        return pd.DataFrame()
+
+@st.cache_data(ttl=3600)
+def carregar_lookups():
+    try:
+        v0 = pd.read_excel('v_loock_up.xlsx', sheet_name=0)
+        v1 = pd.read_excel('v_loock_up.xlsx', sheet_name=1)
+        v2 = pd.read_excel('v_loock_up.xlsx', sheet_name=2)
+        v3 = pd.read_excel('v_loock_up.xlsx', sheet_name=3)
+        v4 = pd.read_excel('v_loock_up.xlsx', sheet_name=4)
+        v5 = pd.read_excel('v_loock_up.xlsx', sheet_name=5)
+        v0['DataCriacaoCliente'] = pd.to_datetime(v0['DataCriacaoCliente'], format='%d/%m/%Y', errors='coerce')
+        return v0, v1, v2, v3, v4, v5
+    except Exception as e:
+        logger.error(f"Erro ao carregar lookups: {str(e)}")
+        st.error(f"Erro ao carregar lookups: {str(e)}")
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+
+@st.cache_data(ttl=3600)
+def carregar_importacao() -> pd.DataFrame:
+    try:
+        df = pd.read_excel('ImportacaoMZ.xlsx')
+        
+        def safe_datetime_conversion(series, format=None):
+            try:
+                if format:
+                    return pd.to_datetime(series, format=format, errors='coerce')
+                else:
+                    return pd.to_datetime(series, errors='coerce')
+            except Exception:
+                return pd.Series([pd.NaT] * len(series))
+        
+        colunas_data = ['NOR', 'Data_Descarga']
+        for col in colunas_data:
+            if col in df.columns:
+                df[col] = safe_datetime_conversion(df[col])
+        
+        return df
+    except FileNotFoundError:
+        logger.error("Arquivo ImportacaoMZ.xlsx não encontrado")
+        st.error("Arquivo ImportacaoMZ.xlsx não encontrado")
+        return pd.DataFrame()
+    except Exception as e:
+        logger.error(f"Erro ao carregar importação: {str(e)}")
+        st.error(f"Erro ao carregar importação: {str(e)}")
+        return pd.DataFrame()
+
+# Carregar dados
+@st.cache_resource
+def carregar_todos_dados():
+    with st.spinner("🔄 Carregando dados do sistema..."):
+        vendas_df = carregar_vendas()
+        plano_df = carregar_plano()
+        v0, v1, v2, v3, v4, v5 = carregar_lookups()
+        import_df = carregar_importacao()
+        return vendas_df, plano_df, v0, v1, v2, v3, v4, v5, import_df
+
+vendas_df, plano_df, v0, v1, v2, v3, v4, v5, import_df = carregar_todos_dados()
+
+# ============================================= DADOS DE STOCK (SIMULADOS OU REAIS) =============================================
+@st.cache_data(ttl=3600)
+def carregar_dados_stock():
+    """Carrega dados de stock - pode ser real ou simulado"""
+    try:
+        # Tentar carregar arquivo real primeiro
+        if os.path.exists('Stock_Provincias.xlsx'):
+            df_stock = pd.read_excel('Stock_Provincias.xlsx')
+            logger.info(f"Dados de stock carregados: {len(df_stock)} registros")
+        else:
+            # Criar dados simulados
+            logger.info("Arquivo de stock não encontrado. Criando dados simulados.")
+            df_stock = criar_dados_stock_simulados()
+        
+        return df_stock
+    except Exception as e:
+        logger.error(f"Erro ao carregar dados de stock: {str(e)}")
+        st.warning(f"⚠️ Erro ao carregar dados de stock. Usando dados simulados.")
+        return criar_dados_stock_simulados()
+
+def criar_dados_stock_simulados():
+    """Cria dados simulados de stock por província"""
+    provincias_mocambique = [
+        "Maputo Cidade", "Maputo", "Gaza", "Inhambane", "Sofala",
+        "Manica", "Tete", "Zambézia", "Nampula", "Cabo Delgado", "Niassa"
+    ]
+    
+    dados = []
+    for provincia in provincias_mocambique:
+        # Stock simulado (em m³)
+        stock_gasolina = np.random.uniform(500, 5000)
+        stock_gasoleo = np.random.uniform(1000, 10000)
+        stock_jet = np.random.uniform(100, 2000) if provincia in ["Maputo Cidade", "Maputo", "Nampula"] else np.random.uniform(50, 500)
+        
+        # Vendas diárias simuladas (em m³/dia)
+        vds_gasolina = np.random.uniform(20, 200)
+        vds_gasoleo = np.random.uniform(50, 500)
+        vds_jet = np.random.uniform(5, 50) if provincia in ["Maputo Cidade", "Maputo", "Nampula"] else np.random.uniform(1, 10)
+        
+        # Calcular dias de autonomia
+        autonomia_gasolina = stock_gasolina / vds_gasolina if vds_gasolina > 0 else 0
+        autonomia_gasoleo = stock_gasoleo / vds_gasoleo if vds_gasoleo > 0 else 0
+        autonomia_jet = stock_jet / vds_jet if vds_jet > 0 else 0
+        
+        # Stock e autonomia totais
+        stock_total = stock_gasolina + stock_gasoleo + stock_jet
+        vds_total = vds_gasolina + vds_gasoleo + vds_jet
+        autonomia_total = stock_total / vds_total if vds_total > 0 else 0
+        
+        dados.append({
+            "Provincia": provincia,
+            "Stock_Gasolina": stock_gasolina,
+            "Stock_Gasoleo": stock_gasoleo,
+            "Stock_Jet": stock_jet,
+            "Stock_Total": stock_total,
+            "VDS_Gasolina": vds_gasolina,
+            "VDS_Gasoleo": vds_gasoleo,
+            "VDS_Jet": vds_jet,
+            "VDS_Total": vds_total,
+            "Autonomia_Gasolina": autonomia_gasolina,
+            "Autonomia_Gasoleo": autonomia_gasoleo,
+            "Autonomia_Jet": autonomia_jet,
+            "Autonomia_Total": autonomia_total,
+            "Data_Atualizacao": datetime.now().strftime("%Y-%m-%d")
+        })
+    
+    return pd.DataFrame(dados)
+
+# Carregar dados de stock
+stock_df = carregar_dados_stock()
+
+# ============================================= FUNÇÕES PARA ABA STOCK =============================================
+
+def criar_card_metricas_stock(titulo: str, valor_principal: str, subtitulo1: str = "", subtitulo2: str = "", icone: str = "📊", tipo_card: str = "default"):
+    """Cria cards de métricas específicos para stock"""
+    
+    card_class = "metric-card-stock"  # padrão
+    
+    if tipo_card == "stock":
+        card_class = "metric-card-stock"
+    elif tipo_card == "autonomia":
+        card_class = "metric-card-autonomia"
+    elif tipo_card == "alerta":
+        card_class = "metric-card-alerta"
+    elif tipo_card == "petromoc":
+        card_class = "metric-card-petromoc"
+    elif tipo_card == "plano":
+        card_class = "metric-card-plano"
+    
+    st.markdown(f"""
+    <div class="{card_class}">
+        <div class="metric-title">{icone} {titulo}</div>
+        <div class="metric-value">{valor_principal}</div>
+        <div class="metric-subvalue">{subtitulo1}</div>
+        <div class="metric-subvalue-small">{subtitulo2}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+def criar_scroller_stock(total_stock: float, autonomia_media: float, provincias_alerta: int, provincias_criticas: int):
+    """Cria um scroller animado para métricas de stock"""
+    
+    st.markdown(f"""
+    <div class="scroller-container scroller-stock">
+        <div class="scroller-title">📦 SITUAÇÃO DE STOCK - MOÇAMBIQUE</div>
+        <div class="scroller-content">
+            <div class="scroller-item">
+                <div class="scroller-value pulse-effect">{formatar_ptbr(total_stock, 0)}</div>
+                <div class="scroller-label">STOCK TOTAL</div>
+                <div class="scroller-subvalue">m³ disponíveis</div>
+            </div>
+            <div class="scroller-item">
+                <div class="scroller-value" style="color: #32CD32;">{autonomia_media:.1f} dias</div>
+                <div class="scroller-label">AUTONOMIA MÉDIA</div>
+                <div class="scroller-subvalue">Stock / Vendas Diárias</div>
+            </div>
+            <div class="scroller-item">
+                <div class="scroller-value" style="color: #FFD700;">{provincias_alerta}</div>
+                <div class="scroller-label">PROVÍNCIAS EM ALERTA</div>
+                <div class="scroller-subvalue">Autonomia &lt; 10 dias</div>
+            </div>
+            <div class="scroller-item">
+                <div class="scroller-value" style="color: #DC143C;">{provincias_criticas}</div>
+                <div class="scroller-label">PROVÍNCIAS CRÍTICAS</div>
+                <div class="scroller-subvalue">Autonomia &lt; 5 dias</div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+def classificar_autonomia(dias_autonomia: float) -> Tuple[str, str, str]:
+    """Classifica os dias de autonomia em categorias"""
+    if dias_autonomia >= 20:
+        return "Excelente", "valor-excelente", "status-excelente"
+    elif dias_autonomia >= 10:
+        return "Bom", "valor-positivo", "status-bom"
+    elif dias_autonomia >= 5:
+        return "Alerta", "valor-alerta", "status-alerta"
+    else:
+        return "Crítico", "valor-critico", "status-critico"
+
+def calcular_metricas_stock_gerais(df_stock: pd.DataFrame) -> Dict:
+    """Calcula métricas gerais de stock"""
+    metricas = {
+        "total_stock": df_stock["Stock_Total"].sum(),
+        "autonomia_media": df_stock["Autonomia_Total"].mean(),
+        "provincias_alerta": len(df_stock[df_stock["Autonomia_Total"] < 10]),
+        "provincias_criticas": len(df_stock[df_stock["Autonomia_Total"] < 5]),
+        "stock_gasolina": df_stock["Stock_Gasolina"].sum(),
+        "stock_gasoleo": df_stock["Stock_Gasoleo"].sum(),
+        "stock_jet": df_stock["Stock_Jet"].sum(),
+        "vds_total": df_stock["VDS_Total"].sum(),
+        "provincia_maior_stock": df_stock.loc[df_stock["Stock_Total"].idxmax(), "Provincia"] if not df_stock.empty else "",
+        "provincia_menor_autonomia": df_stock.loc[df_stock["Autonomia_Total"].idxmin(), "Provincia"] if not df_stock.empty else "",
+        "menor_autonomia": df_stock["Autonomia_Total"].min() if not df_stock.empty else 0,
+        "maior_autonomia": df_stock["Autonomia_Total"].max() if not df_stock.empty else 0
+    }
+    
+    return metricas
+
+def criar_mapa_mocambique_interativo(df_stock: pd.DataFrame):
+    """Cria um mapa interativo de Moçambique com dados de stock por província"""
+    
+    # Dados geográficos das províncias (coordenadas aproximadas)
+    dados_mapa = {
+        "Provincia": ["Maputo Cidade", "Maputo", "Gaza", "Inhambane", "Sofala",
+                     "Manica", "Tete", "Zambézia", "Nampula", "Cabo Delgado", "Niassa"],
+        "Latitude": [-25.9692, -25.9667, -23.0228, -23.8650, -19.8333,
+                    -18.9333, -16.1564, -17.8416, -15.1266, -12.9608, -13.2930],
+        "Longitude": [32.5732, 32.5833, 32.5736, 35.3833, 34.8500,
+                     33.4667, 33.5867, 36.8480, 39.2604, 40.5078, 36.2522]
+    }
+    
+    df_mapa = pd.DataFrame(dados_mapa)
+    
+    # Juntar com dados de stock
+    df_completo = pd.merge(df_mapa, df_stock, on="Provincia", how="left")
+    
+    # Adicionar cores baseadas na autonomia
+    def definir_cor_autonomia(dias):
+        if dias >= 20:
+            return "#32CD32"  # Verde
+        elif dias >= 10:
+            return "#1E90FF"  # Azul
+        elif dias >= 5:
+            return "#FFD700"  # Amarelo
+        else:
+            return "#DC143C"  # Vermelho
+    
+    df_completo["Cor"] = df_completo["Autonomia_Total"].apply(definir_cor_autonomia)
+    
+    # Criar mapa
+    fig = px.scatter_mapbox(
+        df_completo,
+        lat="Latitude",
+        lon="Longitude",
+        hover_name="Provincia",
+        hover_data={
+            "Stock_Total": ":.0f",
+            "Autonomia_Total": ":.1f",
+            "Latitude": False,
+            "Longitude": False,
+            "Cor": False
+        },
+        size="Stock_Total",
+        color="Cor",
+        color_discrete_map="identity",
+        size_max=30,
+        zoom=5,
+        height=600,
+        title="📍 Mapa de Moçambique - Stock por Província"
+    )
+    
+    fig.update_layout(
+        mapbox_style="carto-positron",
+        mapbox=dict(
+            center=dict(lat=-18.5, lon=35),
+            zoom=5
+        ),
+        margin={"r":0,"t":40,"l":0,"b":0},
+        showlegend=False
+    )
+    
+    # Adicionar anotações com valores
+    for idx, row in df_completo.iterrows():
+        fig.add_annotation(
+            x=row["Longitude"],
+            y=row["Latitude"],
+            text=f"{row['Provincia']}<br>{formatar_ptbr(row['Stock_Total'], 0)} m³<br>{row['Autonomia_Total']:.1f} dias",
+            showarrow=False,
+            font=dict(size=10, color="black"),
+            bgcolor="rgba(255, 255, 255, 0.8)",
+            bordercolor="black",
+            borderwidth=1,
+            borderpad=2
+        )
+    
+    return fig
+
+def criar_aba_stock():
+    """Cria a aba completa de análise de Stock"""
+    
+    st.markdown('<div class="section-title-stock">📦 ANÁLISE DE STOCK - MOÇAMBIQUE</div>', unsafe_allow_html=True)
+    
+    # Verificar se temos dados
+    if stock_df.empty:
+        st.warning("⚠️ Nenhum dado de stock disponível")
+        return
+    
+    # Calcular métricas gerais
+    metricas = calcular_metricas_stock_gerais(stock_df)
+    
+    # ========== SCROLLER DE STOCK ==========
+    criar_scroller_stock(
+        metricas["total_stock"],
+        metricas["autonomia_media"],
+        metricas["provincias_alerta"],
+        metricas["provincias_criticas"]
+    )
+    
+    # ========== CARTÕES DE MÉTRICAS PRINCIPAIS ==========
+    st.markdown("#### 🎯 Métricas Principais")
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+      criar_card_metricas(
+        "Stock Total",
+        f"{formatar_ptbr(metricas['total_stock'], 0)}",
+        "m³ disponíveis",
+        f"{len(stock_df)} províncias",
+        "📦",
+        "stock"  # Usando a classe CSS correta
+    )
+
+    with col2:
+    # Determinar cor do card baseado na autonomia
+      if metricas["autonomia_media"] >= 20:
+        cor_card = "autonomia"
+        status_emoji = "✅"
+      elif metricas["autonomia_media"] >= 10:
+        cor_card = "fh"  # Usando cor verde do financial hold
+        status_emoji = "👍"
+      elif metricas["autonomia_media"] >= 5:
+        cor_card = "RELEASE"  # Usando cor amarela do RELEASE
+        status_emoji = "⚠️"
+      else:
+        cor_card = "alerta"  # Usando cor vermelha
+        status_emoji = "🚨"
+    
+      criar_card_metricas(
+        "Autonomia Média",
+        f"{metricas['autonomia_media']:.1f} dias",
+        "Stock / Vendas Diárias",
+        f"{status_emoji} {classificar_autonomia(metricas['autonomia_media'])[0]}",
+        "⏱️",
+        cor_card
+    )
+
+    with col3:
+      criar_card_metricas(
+        "Vendas Diárias",
+        f"{formatar_ptbr(metricas['vds_total'], 0)}",
+        "m³/dia",
+        f"Capacidade de venda",
+        "💰",
+        "petromoc"  # Laranja da Petromoc
+    )
+
+    with col4:
+    # Calcular percentuais
+        total = metricas['total_stock']
+        perc_gasoleo = (metricas['stock_gasoleo'] / total * 100) if total > 0 else 0
+        perc_gasolina = (metricas['stock_gasolina'] / total * 100) if total > 0 else 0
+        perc_jet = (metricas['stock_jet'] / total * 100) if total > 0 else 0
+    
+    criar_card_metricas(
+        "Distribuição por Combustível",
+        f"Gasóleo: {perc_gasoleo:.1f}%",
+        f"Gasolina: {perc_gasolina:.1f}%",
+        f"Jet: {perc_jet:.1f}%",
+        "⚡",
+        "congenere"  # Verde azulado dos congêneres
+    )
+
+    st.markdown("---")
+    
+    # ========== MAPA INTERATIVO ==========
+    st.markdown("#### 🗺️ Mapa de Stock por Província")
+    
+    # Criar tabs para diferentes visualizações
+    tab_mapa, tab_tabela, tab_graficos = st.tabs(["🗺️ Mapa", "📋 Tabela", "📊 Gráficos"])
+    
+    with tab_mapa:
+        fig_mapa = criar_mapa_mocambique_interativo(stock_df)
+        st.plotly_chart(fig_mapa, use_container_width=True)
+        
+        # Legenda do mapa
+        col_leg1, col_leg2, col_leg3, col_leg4 = st.columns(4)
+        
+        with col_leg1:
+            st.markdown('<div class="status-indicator status-excelente"></div> **Excelente** (≥20 dias)', unsafe_allow_html=True)
+        
+        with col_leg2:
+            st.markdown('<div class="status-indicator status-bom"></div> **Bom** (10-19 dias)', unsafe_allow_html=True)
+        
+        with col_leg3:
+            st.markdown('<div class="status-indicator status-alerta"></div> **Alerta** (5-9 dias)', unsafe_allow_html=True)
+        
+        with col_leg4:
+            st.markdown('<div class="status-indicator status-critico"></div> **Crítico** (<5 dias)', unsafe_allow_html=True)
+    
+    with tab_tabela:
+        # Criar tabela detalhada
+        st.markdown("#### 📋 Detalhamento por Província")
+        
+        df_display = stock_df.copy()
+        
+        # Formatar valores
+        colunas_formatar = ["Stock_Gasolina", "Stock_Gasoleo", "Stock_Jet", "Stock_Total",
+                           "VDS_Gasolina", "VDS_Gasoleo", "VDS_Jet", "VDS_Total"]
+        
+        for coluna in colunas_formatar:
+            if coluna in df_display.columns:
+                df_display[coluna] = df_display[coluna].apply(
+                    lambda x: formatar_ptbr(x, 0) if pd.notna(x) else "0"
+                )
+        
+        # Formatar autonomias e adicionar classificação
+        for coluna in ["Autonomia_Gasolina", "Autonomia_Gasoleo", "Autonomia_Jet", "Autonomia_Total"]:
+            if coluna in df_display.columns:
+                df_display[f"{coluna}_Formatado"] = df_display[coluna].apply(
+                    lambda x: f"{x:.1f}" if pd.notna(x) else "0.0"
+                )
+                df_display[f"{coluna}_Classificacao"] = df_display[coluna].apply(
+                    lambda x: classificar_autonomia(x)[0] if pd.notna(x) else "N/A"
+                )
+        
+        # Selecionar colunas para exibição
+        colunas_exibicao = ["Provincia"]
+        
+        for combustivel in ["Gasolina", "Gasoleo", "Jet", "Total"]:
+            if f"Stock_{combustivel}" in df_display.columns:
+                colunas_exibicao.append(f"Stock_{combustivel}")
+            if f"VDS_{combustivel}" in df_display.columns:
+                colunas_exibicao.append(f"VDS_{combustivel}")
+            if f"Autonomia_{combustivel}_Formatado" in df_display.columns:
+                colunas_exibicao.append(f"Autonomia_{combustivel}_Formatado")
+            if f"Autonomia_{combustivel}_Classificacao" in df_display.columns:
+                colunas_exibicao.append(f"Autonomia_{combustivel}_Classificacao")
+        
+        # Renomear colunas
+        df_display = df_display[colunas_exibicao]
+        df_display.columns = [col.replace("_Formatado", "").replace("_Classificacao", " - Status").replace("_", " ") 
+                            for col in df_display.columns]
+        
+        # Aplicar cores às células de autonomia
+        def color_autonomia(val):
+            try:
+                if isinstance(val, str):
+                    if "Excelente" in val:
+                        return 'background-color: #90EE90; color: #006400;'
+                    elif "Bom" in val:
+                        return 'background-color: #87CEFA; color: #00008B;'
+                    elif "Alerta" in val:
+                        return 'background-color: #FFFACD; color: #8B7500;'
+                    elif "Crítico" in val:
+                        return 'background-color: #FFB6C1; color: #8B0000;'
+            except:
+                pass
+            return ''
+        
+        # Aplicar estilo
+        styled_df = df_display.style.applymap(color_autonomia, 
+                                            subset=[col for col in df_display.columns if "Status" in col])
+        
+        # Exibir tabela
+        st.dataframe(
+            styled_df,
+            use_container_width=True,
+            height=500
+        )
+        
+        # Botões de download
+        st.markdown("##### 📥 Download dos Dados")
+        col_dl1, col_dl2 = st.columns(2)
+        
+        with col_dl1:
+            criar_botao_download_excel(
+                stock_df,
+                "dados_stock_provincias",
+                "Dados Completos"
+            )
+        
+        with col_dl2:
+            criar_botao_download_csv(
+                stock_df,
+                "dados_stock_provincias",
+                "Dados Completos"
+            )
+    
+    with tab_graficos:
+        st.markdown("#### 📊 Análise Visual")
+        
+        # Gráfico 1: Stock por província
+        fig1 = px.bar(
+            stock_df.sort_values("Stock_Total", ascending=True),
+            y="Provincia",
+            x="Stock_Total",
+            orientation="h",
+            title="Stock Total por Província (m³)",
+            color="Autonomia_Total",
+            color_continuous_scale="RdYlGn_r",  # Vermelho para baixa autonomia, verde para alta
+            labels={"Stock_Total": "Stock (m³)", "Provincia": "Província", "Autonomia_Total": "Dias de Autonomia"}
+        )
+        fig1.update_layout(height=500)
+        st.plotly_chart(fig1, use_container_width=True)
+        
+        # Gráfico 2: Autonomia por província
+        fig2 = px.bar(
+            stock_df.sort_values("Autonomia_Total", ascending=True),
+            y="Provincia",
+            x="Autonomia_Total",
+            orientation="h",
+            title="Dias de Autonomia por Província",
+            color="Autonomia_Total",
+            color_continuous_scale="RdYlGn",  # Verde para alta autonomia, vermelho para baixa
+            labels={"Autonomia_Total": "Dias de Autonomia", "Provincia": "Província"}
+        )
+        fig2.update_layout(height=500)
+        st.plotly_chart(fig2, use_container_width=True)
+        
+        # Gráfico 3: Distribuição por tipo de combustível
+        st.markdown("##### ⚡ Distribuição de Stock por Tipo de Combustível")
+        
+        total_gasolina = stock_df["Stock_Gasolina"].sum()
+        total_gasoleo = stock_df["Stock_Gasoleo"].sum()
+        total_jet = stock_df["Stock_Jet"].sum()
+        
+        fig3 = px.pie(
+            values=[total_gasolina, total_gasoleo, total_jet],
+            names=["Gasolina", "Gasóleo", "Jet A1"],
+            title="Distribuição de Stock por Tipo de Combustível",
+            color=["Gasolina", "Gasóleo", "Jet A1"],
+            color_discrete_map={
+                "Gasolina": "#FF6B35",
+                "Gasóleo": "#1E90FF",
+                "Jet A1": "#4ECDC4"
+            }
+        )
+        fig3.update_traces(textposition='inside', textinfo='percent+label')
+        st.plotly_chart(fig3, use_container_width=True)
+    
+    st.markdown("---")
+    
+    # ========== ANÁLISE DE ALERTAS ==========
+    st.markdown("#### ⚠️ Análise de Alertas")
+    
+    # Províncias em alerta (autonomia < 10 dias)
+    provincias_alerta = stock_df[stock_df["Autonomia_Total"] < 10].copy()
+    
+    if not provincias_alerta.empty:
+        provincias_alerta = provincias_alerta.sort_values("Autonomia_Total")
+        
+        st.markdown(f"**{len(provincias_alerta)} províncias com autonomia inferior a 10 dias:**")
+        
+        col_alerta1, col_alerta2 = st.columns(2)
+        
+        with col_alerta1:
+            st.markdown("##### 🔴 Províncias Críticas (<5 dias)")
+            criticas = provincias_alerta[provincias_alerta["Autonomia_Total"] < 5]
+            
+            if not criticas.empty:
+                for _, row in criticas.iterrows():
+                    st.markdown(f"""
+                    <div style="background-color: #FFE4E1; padding: 10px; border-radius: 5px; border-left: 5px solid #DC143C; margin: 5px 0;">
+                        <strong>{row['Provincia']}</strong>: {row['Autonomia_Total']:.1f} dias de autonomia
+                        <br><small>Stock: {formatar_ptbr(row['Stock_Total'], 0)} m³ | Vendas diárias: {formatar_ptbr(row['VDS_Total'], 0)} m³/dia</small>
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.markdown("✅ Nenhuma província crítica")
+        
+        with col_alerta2:
+            st.markdown("##### 🟡 Províncias em Alerta (5-9 dias)")
+            alertas = provincias_alerta[provincias_alerta["Autonomia_Total"] >= 5]
+            
+            if not alertas.empty:
+                for _, row in alertas.iterrows():
+                    st.markdown(f"""
+                    <div style="background-color: #FFFACD; padding: 10px; border-radius: 5px; border-left: 5px solid #FFD700; margin: 5px 0;">
+                        <strong>{row['Provincia']}</strong>: {row['Autonomia_Total']:.1f} dias de autonomia
+                        <br><small>Stock: {formatar_ptbr(row['Stock_Total'], 0)} m³ | Vendas diárias: {formatar_ptbr(row['VDS_Total'], 0)} m³/dia</small>
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.markdown("✅ Nenhuma província em alerta")
+        
+        # Recomendações
+        st.markdown("##### 📋 Recomendações")
+        
+        col_rec1, col_rec2, col_rec3 = st.columns(3)
+        
+        with col_rec1:
+            st.markdown("""
+            <div style="background-color: #F0F8FF; padding: 15px; border-radius: 10px; border: 1px solid #1E90FF;">
+                <h5>🚚 Reabastecimento Prioritário</h5>
+                <p>Priorizar envio de combustível para:</p>
+                <ul>
+                    <li>{}</li>
+                    <li>{}</li>
+                    <li>{}</li>
+                </ul>
+            </div>
+            """.format(
+                metricas["provincia_menor_autonomia"],
+                provincias_alerta.iloc[0]["Provincia"] if len(provincias_alerta) > 0 else "",
+                provincias_alerta.iloc[1]["Provincia"] if len(provincias_alerta) > 1 else ""
+            ), unsafe_allow_html=True)
+        
+        with col_rec2:
+            st.markdown("""
+            <div style="background-color: #F0FFF0; padding: 15px; border-radius: 10px; border: 1px solid #32CD32;">
+                <h5>📊 Otimização de Stock</h5>
+                <p>Ações recomendadas:</p>
+                <ul>
+                    <li>Redistribuir stock entre províncias</li>
+                    <li>Revisar previsões de demanda</li>
+                    <li>Ajustar rotas de distribuição</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col_rec3:
+            st.markdown("""
+            <div style="background-color: #FFF8DC; padding: 15px; border-radius: 10px; border: 1px solid #FFD700;">
+                <h5>📈 Monitoramento</h5>
+                <p>Monitorar diariamente:</p>
+                <ul>
+                    <li>Stock crítico: <strong>{}</strong></li>
+                    <li>Autonomia mínima: <strong>{:.1f} dias</strong></li>
+                    <li>Vendas diárias totais: <strong>{} m³</strong></li>
+                </ul>
+            </div>
+            """.format(
+                metricas["provincia_menor_autonomia"],
+                metricas["menor_autonomia"],
+                formatar_ptbr(metricas["vds_total"], 0)
+            ), unsafe_allow_html=True)
+    
+    else:
+        st.markdown("""
+        <div style="background-color: #F0FFF0; padding: 20px; border-radius: 10px; border: 2px solid #32CD32; text-align: center;">
+            <h4 style="color: #228B22;">✅ SITUAÇÃO ESTÁVEL</h4>
+            <p>Todas as províncias têm autonomia superior a 10 dias.</p>
+            <p><strong>Stock total:</strong> {} m³ | <strong>Autonomia média:</strong> {:.1f} dias</p>
+        </div>
+        """.format(
+            formatar_ptbr(metricas["total_stock"], 0),
+            metricas["autonomia_media"]
+        ), unsafe_allow_html=True)
+    
+    # ========== RELATÓRIO EXECUTIVO ==========
+    with st.expander("📄 Relatório Executivo de Stock"):
+        st.markdown(f"""
+        ### 📋 Relatório de Stock - {datetime.now().strftime('%d/%m/%Y')}
+        
+        **Situação Geral:**
+        - **Stock Total:** {formatar_ptbr(metricas['total_stock'], 0)} m³
+        - **Autonomia Média:** {metricas['autonomia_media']:.1f} dias
+        - **Vendas Diárias Totais:** {formatar_ptbr(metricas['vds_total'], 0)} m³/dia
+        - **Províncias Analisadas:** {len(stock_df)}
+        
+        **Distribuição por Combustível:**
+        - **Gasóleo:** {formatar_ptbr(metricas['stock_gasoleo'], 0)} m³ ({metricas['stock_gasoleo']/metricas['total_stock']*100:.1f}%)
+        - **Gasolina:** {formatar_ptbr(metricas['stock_gasolina'], 0)} m³ ({metricas['stock_gasolina']/metricas['total_stock']*100:.1f}%)
+        - **Jet A1:** {formatar_ptbr(metricas['stock_jet'], 0)} m³ ({metricas['stock_jet']/metricas['total_stock']*100:.1f}%)
+        
+        **Situação por Província:**
+        - **Maior Stock:** {metricas['provincia_maior_stock']} ({formatar_ptbr(stock_df[stock_df['Provincia'] == metricas['provincia_maior_stock']]['Stock_Total'].iloc[0], 0)} m³)
+        - **Menor Autonomia:** {metricas['provincia_menor_autonomia']} ({metricas['menor_autonomia']:.1f} dias)
+        - **Maior Autonomia:** {stock_df.loc[stock_df['Autonomia_Total'].idxmax(), 'Provincia']} ({metricas['maior_autonomia']:.1f} dias)
+        
+        **Alertas Ativos:**
+        - Províncias em Alerta (5-9 dias): {metricas['provincias_alerta'] - metricas['provincias_criticas']}
+        - Províncias Críticas (<5 dias): {metricas['provincias_criticas']}
+        
+        **Recomendações:**
+        1. Priorizar reabastecimento em **{metricas['provincia_menor_autonomia']}**
+        2. Monitorar diariamente as províncias com autonomia inferior a 10 dias
+        3. Revisar previsões de demanda para ajustar níveis de stock
+        4. Considerar redistribuição entre províncias com excesso de stock
+        """)
+        
+        # Botão para gerar PDF (placeholder)
+        if st.button("🖨️ Gerar Relatório PDF", use_container_width=True):
+            st.info("📄 Funcionalidade de geração de PDF em desenvolvimento...")
+
+
 
 
 # ============================================= FUNÇÃO PRINCIPAL =============================================
@@ -3548,50 +3989,48 @@ def criar_aba_vendas_promotores(df_filtrado: pd.DataFrame):
 def main():
     """Função principal"""
     
-# Adicione no início da sua função principal
+    # Adicione CSS adicional
     st.markdown("""
-<style>
-    /* Estilos gerais para tabelas */
-    .stDataFrame {
-        border: 2px solid #FF6B35;
-        border-radius: 10px;
-        overflow: hidden;
-    }
-    
-    /* Cores para botões */
-    .stButton > button {
-        background-color: #FF6B35;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        padding: 10px 20px;
-        font-weight: bold;
-    }
-    
-    .stButton > button:hover {
-        background-color: #FF4500;
-        color: white;
-    }
-    
-    /* Estilos para selects */
-    .stSelectbox {
-        background-color: #F0F8FF;
-        border-radius: 5px;
-        padding: 5px;
-    }
-    
-    /* Cores para métricas */
-    .metric-container {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 10px;
-        padding: 15px;
-        color: white;
-        margin: 5px;
-    }
+    <style>
+        /* Estilos gerais para tabelas */
+        .stDataFrame {
+            border: 2px solid #FF6B35;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        /* Cores para botões */
+        .stButton > button {
+            background-color: #FF6B35;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-weight: bold;
+        }
+        
+        .stButton > button:hover {
+            background-color: #FF4500;
+            color: white;
+        }
+        
+        /* Estilos para selects */
+        .stSelectbox {
+            background-color: #F0F8FF;
+            border-radius: 5px;
+            padding: 5px;
+        }
+        
+        /* Cores para métricas */
+        .metric-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            padding: 15px;
+            color: white;
+            margin: 5px;
+        }
     </style>
     """, unsafe_allow_html=True)
-
-
 
     # HEADER PRINCIPAL
     st.markdown('<h1 class="main-header">Sistema de Gestão - Petromoc, SA</h1>', unsafe_allow_html=True)
@@ -3641,8 +4080,8 @@ def main():
         criar_aba_promotores(df_filtrado_promotores)
         
     elif modo_trabalho == "Stock":
-        st.info("👥 Módulo Stock em desenvolvimento...")
-        st.write("Em breve: Análise de desempenho de Stock")
+        # CRIAR ABA DE STOCK (NOVA FUNCIONALIDADE)
+        criar_aba_stock()
         
     elif modo_trabalho == "Caixa_e_Bancos":
         st.info("👥 Módulo Caixa_e_Bancos em desenvolvimento...")

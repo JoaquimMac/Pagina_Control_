@@ -1,0 +1,9 @@
+{
+    "start_year": 2023,
+    "end_year": 2025,
+    "files": {
+        "vendas": ["dados/vendas_{year}.xlsx"],
+        "plano": ["dados/plano_{year}.xlsx"],
+        "importacao": "dados/importacao.xlsx"
+    }
+}
